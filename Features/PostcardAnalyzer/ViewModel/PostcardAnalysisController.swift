@@ -92,8 +92,6 @@ final class PostcardAnalysisController: ObservableObject {
 
         await MainActor.run {
             self.isAnalyzing = false
-            // If cancelled, you might not want to force imagesAnalyzed to totalImages
-            // Leave it as-is to reflect partial progress
         }
     }
     
@@ -110,9 +108,8 @@ final class PostcardAnalysisController: ObservableObject {
         }
     }
     
-    // MARK: - Handle Each Analysis Batch
     private func handleAnalysisBatch(_ jsonString: String, index: Int, batchID: String, imageFiles: [URL]) async {
-        print("🧩 handleAnalysisBatch \(index)")
+        print("handleAnalysisBatch \(index)")
         guard let jsonData = jsonString.data(using: .utf8) else {
             let message = "Batch \(index): Failed to convert JSON string to Data."
             print("❌ [handleAnalysisBatch] \(message)")
@@ -144,7 +141,6 @@ final class PostcardAnalysisController: ObservableObject {
         }
     }
     
-    // MARK: - Create PostcardDetails from AI Data
     private func createPostcardDetails(
         from aiResults: [PostcardAIExtractedData],
         batchID: String,

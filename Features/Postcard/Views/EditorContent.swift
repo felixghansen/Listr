@@ -154,9 +154,6 @@ struct EditorContent: View {
     }
 }
 
-
-
-// MARK: - Status Section
 struct StatusSection: View {
     let status: PostcardStatus
     
@@ -178,7 +175,6 @@ struct StatusSection: View {
     }
 }
 
-// MARK: - Basic Info Section
 struct BasicInfoSection: View {
     @Binding var title: String
     @Binding var description: String
@@ -222,7 +218,6 @@ struct BasicInfoSection: View {
     }
 }
 
-// MARK: - Type Section
 struct TypeSection: View {
     @Binding var material: String
     @Binding var style: String
@@ -258,7 +253,6 @@ struct TypeSection: View {
     }
 }
 
-// MARK: - Postal Info Section
 struct PostalInfoSection: View {
     @Binding var postmarkDate: String
     @Binding var mailingOrigin: String
@@ -294,7 +288,6 @@ struct PostalInfoSection: View {
     }
 }
 
-// MARK: - Publisher Section
 struct PublisherSection: View {
     @Binding var publisher: String
     @Binding var condition: String
@@ -330,7 +323,6 @@ struct PublisherSection: View {
     }
 }
 
-// MARK: - Keywords Section
 struct KeywordsSection: View {
     @Binding var keywords: [String]
     @State private var newKeyword: String = ""
@@ -409,7 +401,6 @@ struct KeywordsSection: View {
     }
 }
 
-// MARK: - Drag and Drop Delegate
 struct KeywordDropDelegate: DropDelegate {
     let keyword: String
     @Binding var keywords: [String]
@@ -434,7 +425,6 @@ struct KeywordDropDelegate: DropDelegate {
     }
 }
 
-// MARK: - Pricing Section
 struct PricingSection: View {
     @Binding var price: Double
     @Binding var auctionStart: Double
@@ -480,7 +470,6 @@ struct PricingSection: View {
     }
 }
 
-// MARK: - Metadata Section
 struct MetadataSection: View {
     let scannedAt: Date
     let batchID: String

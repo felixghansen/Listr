@@ -17,14 +17,14 @@ struct PostcardFilter: Equatable {
 
 enum BatchFilter: Equatable {
     case none
-    case selected(batches: Set<PostcardBatch>)  // Changed from batchIDs
+    case selected(batches: Set<PostcardBatch>)
     
     var batchIDs: Set<String> {
         switch self {
         case .none:
             return []
         case .selected(let batches):
-            return Set(batches.compactMap { $0.id })  // Compute IDs when needed
+            return Set(batches.compactMap { $0.id })
         }
     }
     

@@ -14,7 +14,7 @@ final class BatchRepository: ObservableObject {
     private init() {}
     
     private let db = Firestore.firestore()
-    private let userID = "JWtpA1hS0PxKRyTKAtm5"
+    private let userID: String = config.userID
     
     var batchesCollection: CollectionReference {
         db.collection("users").document(userID).collection("batches")
@@ -100,7 +100,6 @@ final class BatchRepository: ObservableObject {
                     }
                 }
             } catch {
-                // todo: popup
                 print("Failed to update/delete batch \(batchID): \(error)")
             }
         }

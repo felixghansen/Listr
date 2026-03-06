@@ -14,7 +14,7 @@ final class PostcardRepository: ObservableObject {
     private init() {}
     
     private let db = Firestore.firestore()
-    private let userID: String = "JWtpA1hS0PxKRyTKAtm5"
+    private let userID: String = "JWtpA1hS0PxKRyTKAtm5" // TODO
     private let pageSize = 50
     
     private var postcardsCollection: CollectionReference {
@@ -215,9 +215,7 @@ final class PostcardRepository: ObservableObject {
                         await MainActor.run {
                             self.cachedDetails[id] = details
                         }
-                    } catch {
-                        // Best-effort warming; ignore failures
-                    }
+                    } catch { }
                 }
             }
         }
@@ -226,7 +224,6 @@ final class PostcardRepository: ObservableObject {
     private func makeQuery(for filter: PostcardFilter) -> Query {
         var query: Query = postcardsCollection
         
-        // 1. Equality filters first (most selective to least)
         if let status = filter.status {
             query = query.whereField("status", isEqualTo: status.rawValue)
         }
@@ -238,7 +235,6 @@ final class PostcardRepository: ObservableObject {
                 break
         }
         
-        // 3. Secondary sort order
         switch filter.sortOrder {
             case .scannedAt(let descending):
                 query = query.order(by: "scannedAt", descending: descending)

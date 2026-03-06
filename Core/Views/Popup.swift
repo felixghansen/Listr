@@ -12,7 +12,7 @@ enum PopupStyle: Equatable {
     case success
     case warning
     case error
-    case progress(Double?) // nil -> indeterminate
+    case progress(Double?)
 
     var iconName: String {
         switch self {
@@ -40,11 +40,9 @@ struct Popup: View {
     var title: String
     var message: String?
 
-    // Optional primary action (e.g., Retry, Dismiss)
     var primaryActionTitle: String?
     var primaryAction: (() -> Void)?
 
-    // Optional secondary action (e.g., Cancel)
     var secondaryActionTitle: String?
     var secondaryAction: (() -> Void)?
 
@@ -90,7 +88,6 @@ struct Popup: View {
                 Spacer(minLength: 0)
             }
 
-            // Progress when style is .progress
             if case let .progress(value) = style {
                 if let value {
                     ProgressView(value: value)
