@@ -14,7 +14,7 @@ final class PostcardRepository: ObservableObject {
     private init() {}
     
     private let db = Firestore.firestore()
-    private let userID: String = "JWtpA1hS0PxKRyTKAtm5" // TODO
+    private let userID: String = config.userID // TODO
     private let pageSize = 50
     
     private var postcardsCollection: CollectionReference {

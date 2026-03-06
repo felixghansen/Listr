@@ -6,7 +6,7 @@ import AppKit
 final class StorageManager {
     static let shared = StorageManager()
     private let storage = Storage.storage()
-    private let userID: String = "JWtpA1hS0PxKRyTKAtm5"
+    private let userID: String = config.userID
     
     private init() {}
     

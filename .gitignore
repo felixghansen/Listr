@@ -1,2 +1,5 @@
-GoogleService-Info.plist
-config.swift
+**/GoogleService-Info.plist
+**/config.swift
+**/*.entitlements
+
+Resources/notes.txt
