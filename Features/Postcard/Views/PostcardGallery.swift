@@ -30,13 +30,13 @@ struct PostcardGallery: View {
                         .onTapGesture { onSelect(postcard) }
                     }
                 }
+                .padding()
             }
-            .padding()
             .onTapGesture { clearSelection() }
             HStack {
                 Spacer()
                     .frame(width: 100)
-                    .background(Color.red.opacity(0.1))
+
                 Spacer()
 
                 Text(

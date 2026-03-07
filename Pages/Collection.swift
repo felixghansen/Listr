@@ -11,7 +11,7 @@ struct Collection: View {
     let postcards: [PostcardSummary]
     @Binding var selectedPostcards: [PostcardDetails]
     
-    @StateObject private var postcardRepository = PostcardRepository.shared
+    @ObservedObject var postcardRepository: PostcardRepository
     @State private var loadingIDs: Set<String> = []
     
     private var selectedPostcardIDs: Set<String> {
@@ -35,7 +35,6 @@ struct Collection: View {
     }
 
     private func handlePostcardSelection(_ postcard: PostcardSummary) {
-        // todo arrow buttons to change selection
         let id = postcard.id
         
         #if os(macOS)

@@ -17,6 +17,7 @@ struct ContentView: View {
     @StateObject private var controller = PostcardAnalysisController()
     @StateObject private var postcardRepo = PostcardRepository.shared
     @StateObject private var batchRepo = BatchRepository.shared
+    @StateObject private var auth = AuthService.shared
     @State private var columnVisibility: NavigationSplitViewVisibility = .detailOnly
 
     @State private var filter = PostcardFilter()
@@ -37,13 +38,13 @@ struct ContentView: View {
     
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
-            Navigation(selectedTab: $selectedTab)
-                .navigationSplitViewColumnWidth(150)
+            Sidebar(selectedTab: $selectedTab, auth: auth)
+                .navigationSplitViewColumnWidth(200)
         } detail: {
             VStack {
                 switch selectedTab {
                 case .collection:
-                    Collection(postcards: visiblePostcards, selectedPostcards: $selectedPostcards)
+                    Collection(postcards: visiblePostcards, selectedPostcards: $selectedPostcards, postcardRepository: postcardRepo)
                 }
             }
             .navigationTitle(selectedTab.title)
@@ -63,7 +64,7 @@ struct ContentView: View {
             }
             .inspector(isPresented: $showInspector) {
                 PostcardInspector(selectedPostcards: $selectedPostcards)
-                    .inspectorColumnWidth(min: 350, ideal: 400, max: 450)
+                    .inspectorColumnWidth(min: 300, ideal: 350, max: 400)
             }
         }
         .overlay(alignment: .center) {

@@ -69,7 +69,6 @@ struct ImageCarousel: View {
                 }
             }
 
-            // Navigation
             HStack(spacing: 16) {
                 Button {
                     currentIndex = max(currentIndex - 1, 0)
