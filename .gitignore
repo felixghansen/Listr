@@ -1,4 +1,4 @@
-**/GoogleService-Info.plist
+**/*.plist
 **/config.swift
 **/*.entitlements
 
