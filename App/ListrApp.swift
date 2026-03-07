@@ -10,7 +10,7 @@ struct YourApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .frame(minWidth: 1400, minHeight: 600)
+                .frame(idealWidth: 1000, minHeight: 500, idealHeight: 750)
         }
     }
 }

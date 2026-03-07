@@ -47,6 +47,7 @@ struct ContentView: View {
                     Collection(postcards: visiblePostcards, selectedPostcards: $selectedPostcards, postcardRepository: postcardRepo)
                 }
             }
+            .frame(minWidth: 500)
             .navigationTitle(selectedTab.title)
             .searchable(
                 text: $searchText,
@@ -64,7 +65,7 @@ struct ContentView: View {
             }
             .inspector(isPresented: $showInspector) {
                 PostcardInspector(selectedPostcards: $selectedPostcards)
-                    .inspectorColumnWidth(min: 300, ideal: 350, max: 400)
+                    .inspectorColumnWidth(350)
             }
         }
         .overlay(alignment: .center) {
