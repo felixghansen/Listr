@@ -36,6 +36,7 @@ struct Sidebar: View {
 
 private struct SidebarUserProfile: View {
     let user: FirebaseAuth.User?
+    @StateObject var coordinator = AccountSettingsCoordinator()
     
     var body: some View {
         HStack(spacing: 12) {
@@ -60,8 +61,16 @@ private struct SidebarUserProfile: View {
                         .foregroundColor(.secondary)
                 }
             }
+            
         }
         .contentShape(Rectangle())
+        .background(.blue)
+        .onTapGesture {
+            coordinator.showAccountSettings()
+        }
+        .sheet(isPresented: $coordinator.isShowingAccount, onDismiss: coordinator.handleDismiss) {
+            AccountSettings(coordinator: coordinator)
+        }
     }
 }
 
