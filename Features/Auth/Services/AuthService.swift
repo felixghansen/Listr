@@ -11,15 +11,15 @@ import FirebaseAuth
 final class AuthService: ObservableObject {
     static let shared = AuthService()
     
-    @Published var currentUser: User?
+    @Published var user: User?
     
     private init() {
         Auth.auth().addStateDidChangeListener { [weak self] _, user in
             // NOTE: This doesn't run when user is deleted, it only listens to signOut()
             if let user = user, user.isEmailVerified {
-                self?.currentUser = user
+                self?.user = user
             } else {
-                self?.currentUser = nil
+                self?.user = nil
             }
         }
     }
@@ -94,7 +94,7 @@ final class AuthService: ObservableObject {
             if let error = error {
                 completion(.failure(error))
             } else {
-                self.currentUser = Auth.auth().currentUser
+                self.user = Auth.auth().currentUser
                 completion(.success(()))
             }
         }
