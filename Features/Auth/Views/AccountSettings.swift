@@ -10,12 +10,22 @@ import SwiftUI
 
 struct AccountSettings: View {
     @ObservedObject var coordinator: AccountSettingsCoordinator
+    @ObservedObject var authVM: AuthViewModel
     
     var body: some View {
         VStack {
-            Text("Settings")
-            Button("Done") {
-                coordinator.hideAccountSettings()
+            Text("Account")
+                .font(.headline)
+            
+            HStack {
+                Spacer()
+                Button("Sign out") {
+                    authVM.signOut()
+                }
+                Button("Done") {
+                    coordinator.hideAccountSettings()
+                }
+                .buttonStyle(.borderedProminent)
             }
         }
     }

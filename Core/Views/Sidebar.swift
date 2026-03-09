@@ -36,7 +36,9 @@ struct Sidebar: View {
 
 private struct SidebarUserProfile: View {
     let user: FirebaseAuth.User?
+    
     @StateObject var coordinator = AccountSettingsCoordinator()
+    @StateObject var authVM = AuthViewModel()
     
     var body: some View {
         HStack(spacing: 12) {
@@ -64,12 +66,18 @@ private struct SidebarUserProfile: View {
             
         }
         .contentShape(Rectangle())
-        .background(.blue)
         .onTapGesture {
-            coordinator.showAccountSettings()
+            if user == nil {
+                coordinator.showAccountSignIn()
+            } else {
+                coordinator.showAccountSettings()
+            }
         }
         .sheet(isPresented: $coordinator.isShowingAccount, onDismiss: coordinator.handleDismiss) {
-            AccountSettings(coordinator: coordinator)
+            AccountSettings(coordinator: coordinator, authVM: authVM)
+        }
+        .sheet(isPresented: $coordinator.isShowingAccountSignIn, onDismiss: coordinator.handleDismiss) {
+            AccountSignIn(coordinator: coordinator, authVM: authVM)
         }
     }
 }

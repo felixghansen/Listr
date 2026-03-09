@@ -18,7 +18,7 @@ struct ContentView: View {
     @StateObject private var postcardRepo = PostcardRepository.shared
     @StateObject private var batchRepo = BatchRepository.shared
     @StateObject private var auth = AuthService.shared
-    @State private var columnVisibility: NavigationSplitViewVisibility = .detailOnly
+    @State private var columnVisibility: NavigationSplitViewVisibility = .all
 
     @State private var filter = PostcardFilter()
     @State private var searchText = ""
