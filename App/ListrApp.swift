@@ -3,6 +3,9 @@ import FirebaseCore
 
 @main
 struct YourApp: App {
+    @StateObject var authVM = AuthViewModel()
+    @StateObject var coordinator = AccountSettingsCoordinator()
+    
     init() {
         FirebaseApp.configure()
     }
@@ -11,6 +14,8 @@ struct YourApp: App {
         WindowGroup {
             ContentView()
                 .frame(idealWidth: 1000, minHeight: 500, idealHeight: 750)
+                .environmentObject(authVM)
+                .environmentObject(coordinator)
         }
     }
 }

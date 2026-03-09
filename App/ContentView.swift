@@ -15,9 +15,14 @@ struct ContentView: View {
     @State private var selectedTab: Tab = .collection
 
     @StateObject private var controller = PostcardAnalysisController()
-    @StateObject private var postcardRepo = PostcardRepository.shared
-    @StateObject private var batchRepo = BatchRepository.shared
-    @StateObject private var auth = AuthService.shared
+    
+    @ObservedObject private var postcardRepo = PostcardRepository.shared
+    @ObservedObject private var batchRepo = BatchRepository.shared
+    @ObservedObject private var auth = AuthService.shared
+    
+    @EnvironmentObject var authVM: AuthViewModel
+    @EnvironmentObject var coordinator: AccountSettingsCoordinator
+    
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
 
     @State private var filter = PostcardFilter()
@@ -56,7 +61,13 @@ struct ContentView: View {
             )
             .toolbar {
                 CollectionToolbar.importButton(
-                    onImport: { controller.openFolderPicker() }
+                    onImport: {
+                        if let user = auth.user, user.isEmailVerified {
+                            controller.openFolderPicker()
+                        } else {
+                            authVM.sendVerification()
+                        }
+                    }
                 )
                 CollectionToolbar.filterAndSortButtons(
                     filter: $filter
@@ -82,6 +93,24 @@ struct ContentView: View {
                 .transition(.opacity.combined(with: .scale(scale: 0.98)))
                 .animation(.snappy, value: controller.isAnalyzing)
             }
+        }
+        .alert("Account", isPresented: $authVM.showAlert) {
+            if authVM.alertState == .registrationSuccess || authVM.alertState == .unverifiedAction {
+                Button(authVM.canResend ? "Resend Verification" : "Wait (\(authVM.resendCooldown)s)") {
+                    authVM.sendVerification()
+                }
+                .disabled(!authVM.canResend)
+            }
+            Button("OK", role: .cancel) {
+                switch authVM.alertState {
+                case .registrationSuccess, .loginSuccess:
+                    coordinator.hideAccountSignIn()
+                default:
+                    break
+                }
+            }
+        } message: {
+            Text(authVM.alertState.message)
         }
         .onAppear {
             postcardRepo.startListening(for: PostcardFilter())

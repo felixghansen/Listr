@@ -25,7 +25,7 @@ struct Sidebar: View {
             VStack(spacing: 0) {
                 Divider()
                 
-                SidebarUserProfile(user: auth.currentUser)
+                SidebarUserProfile(user: auth.user)
                     .padding(.vertical, 12)
                     .padding(.horizontal, 16)
             }
@@ -36,9 +36,7 @@ struct Sidebar: View {
 
 private struct SidebarUserProfile: View {
     let user: FirebaseAuth.User?
-    
-    @StateObject var coordinator = AccountSettingsCoordinator()
-    @StateObject var authVM = AuthViewModel()
+    @EnvironmentObject var coordinator: AccountSettingsCoordinator
     
     var body: some View {
         HStack(spacing: 12) {
@@ -74,10 +72,10 @@ private struct SidebarUserProfile: View {
             }
         }
         .sheet(isPresented: $coordinator.isShowingAccount, onDismiss: coordinator.handleDismiss) {
-            AccountSettings(coordinator: coordinator, authVM: authVM)
+            AccountSettings()
         }
         .sheet(isPresented: $coordinator.isShowingAccountSignIn, onDismiss: coordinator.handleDismiss) {
-            AccountSignIn(coordinator: coordinator, authVM: authVM)
+            AccountSignIn()
         }
     }
 }
