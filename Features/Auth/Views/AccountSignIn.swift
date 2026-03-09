@@ -9,8 +9,8 @@ import Foundation
 import SwiftUI
 
 struct AccountSignIn: View {
-    @ObservedObject var coordinator: AccountSettingsCoordinator
-    @ObservedObject var authVM: AuthViewModel
+    @EnvironmentObject var authVM: AuthViewModel
+    @EnvironmentObject var coordinator: AccountSettingsCoordinator
     
     @State private var email: String = ""
     @State private var password: String = ""
@@ -90,17 +90,10 @@ struct AccountSignIn: View {
             }
         }
         .padding()
-        .alert("Account", isPresented: $authVM.showAlert) {
-            Button("OK", role: .cancel) {
-                switch authVM.alertState {
-                case .registrationSuccess, .loginSuccess:
-                    coordinator.hideAccountSignIn()
-                default:
-                    break
-                }
+        .onChange(of: authVM.alertState) { _, newState in
+            if newState == .loginSuccess || newState == .registrationSuccess {
+                coordinator.hideAccountSignIn()
             }
-        } message: {
-            Text(authVM.alertState.message)
         }
     }
 }

@@ -9,8 +9,8 @@ import Foundation
 import SwiftUI
 
 struct AccountSettings: View {
-    @ObservedObject var coordinator: AccountSettingsCoordinator
-    @ObservedObject var authVM: AuthViewModel
+    @EnvironmentObject var authVM: AuthViewModel
+    @EnvironmentObject var coordinator: AccountSettingsCoordinator
     
     var body: some View {
         VStack {
