@@ -7,6 +7,7 @@
 
 import Foundation
 import FirebaseFirestore
+import FirebaseAuth
 
 @MainActor
 final class PostcardRepository: ObservableObject {
@@ -14,11 +15,17 @@ final class PostcardRepository: ObservableObject {
     private init() {}
     
     private let db = Firestore.firestore()
-    private let userID: String = config.userID // TODO
     private let pageSize = 50
     
-    private var postcardsCollection: CollectionReference {
-        db.collection("users").document(userID).collection("postcards")
+    private var userID: String? {
+        Auth.auth().currentUser?.uid
+    }
+    
+    var postcardsCollection: CollectionReference {
+        guard let userID = userID else {
+            fatalError("PostcardRepository accessed without authentication")
+        }
+        return db.collection("users").document(userID).collection("postcards")
     }
     
     @Published private(set) var cachedSummaries: [PostcardSummary] = []

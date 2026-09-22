@@ -3,20 +3,12 @@ import FirebaseAuth
 
 enum AuthAlertState: Equatable {
     case idle
-    case registrationSuccess
-    case unverifiedAction
-    case loginSuccess
-    case passwordResetSent
     case error(String)
     
     var message: String {
         switch self {
-        case .registrationSuccess: return "Account created! Please verify your email to unlock all features. Check your inbox."
-        case .unverifiedAction: return "Please verify your email to unlock all features. Check your inbox."
-        case .loginSuccess: return "Successfully logged in!"
-        case .passwordResetSent: return "Password reset email sent."
-        case .error(let message): return message
         case .idle: return ""
+        case .error(let message): return message
         }
     }
 }
@@ -27,7 +19,10 @@ final class AuthViewModel: ObservableObject {
     @Published var showAlert = false
     @Published var isLoading = false
     
+    @Published var needsVerification = false
+    
     @Published var resendCooldown: Int = 0
+    private let cooldownDuration: Int = 15
     private var timer: Timer?
 
     var canResend: Bool {
@@ -47,8 +42,7 @@ final class AuthViewModel: ObservableObject {
             self.isLoading = false
             switch result {
             case .success:
-                self.alertState = .registrationSuccess
-                self.showAlert = true
+                self.needsVerification = true
             case .failure(let error):
                 self.handleFirebaseError(error)
             }
@@ -61,28 +55,40 @@ final class AuthViewModel: ObservableObject {
             self.isLoading = false
             switch result {
             case .success:
-                self.alertState = .loginSuccess
-                self.showAlert = true
+                if let user = Auth.auth().currentUser {
+                    self.needsVerification = true
+                }
             case .failure(let error):
                 self.handleFirebaseError(error)
             }
         }
     }
     
-    func resetPassword(email: String) {
-        guard !email.isEmpty else {
-            self.alertState = .error("Please enter your email address.")
-            self.showAlert = true
-            return
-        }
-        
-        self.isLoading = true
-        AuthService.shared.sendPasswordReset(email: email) { result in
-            self.isLoading = false
+//    func resetPassword(email: String) {
+//        guard !email.isEmpty else {
+//            self.alertState = .error("Please enter your email address.")
+//            self.showAlert = true
+//            return
+//        }
+//        
+//        self.isLoading = true
+//        AuthService.shared.sendPasswordReset(email: email) { result in
+//            self.isLoading = false
+//            switch result {
+//            case .success:
+//                self.alertState = .passwordResetSent
+//                self.showAlert = true
+//            case .failure(let error):
+//                self.handleFirebaseError(error)
+//            }
+//        }
+//    }
+    
+    func checkVerification() {
+        AuthService.shared.refreshVerificationStatus { result in
             switch result {
             case .success:
-                self.alertState = .passwordResetSent
-                self.showAlert = true
+                break
             case .failure(let error):
                 self.handleFirebaseError(error)
             }
@@ -95,21 +101,17 @@ final class AuthViewModel: ObservableObject {
                 switch result {
                 case .success:
                     self.startCooldown()
-                    self.alertState = .unverifiedAction
-                    self.showAlert = true
                 case .failure(let error):
                     self.handleFirebaseError(error)
                 }
             }
-        } else {
-            self.alertState = .unverifiedAction
-            self.showAlert = true
         }
     }
     
     func signOut() {
         do {
             try AuthService.shared.signOut()
+            self.needsVerification = false
         } catch {
             self.alertState = .error(error.localizedDescription)
             self.showAlert = true
@@ -117,7 +119,7 @@ final class AuthViewModel: ObservableObject {
     }
     
     private func startCooldown() {
-        resendCooldown = 60
+        resendCooldown = cooldownDuration
         timer?.invalidate()
         
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
@@ -147,7 +149,7 @@ final class AuthViewModel: ObservableObject {
         
         if let code = AuthErrorCode(rawValue: nsError.code) {
             switch code {
-            case .emailAlreadyInUse: // Note: Possible safety concern
+            case .emailAlreadyInUse: // Note: Possible safety concern ( I dont know if firebase uses it)
                 errorMessage = "This email is already registered. Try signing in instead."
             case .invalidEmail:
                 errorMessage = "Invalid email address."

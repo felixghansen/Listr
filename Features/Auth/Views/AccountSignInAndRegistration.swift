@@ -1,5 +1,5 @@
 //
-//  AccountSignIn.swift
+//  AccountSignInAndRegistration.swift
 //  Listr
 //
 //  Created by Felix on 3/8/26.
@@ -8,9 +8,8 @@
 import Foundation
 import SwiftUI
 
-struct AccountSignIn: View {
+struct AccountSignInAndRegistration: View {
     @EnvironmentObject var authVM: AuthViewModel
-    @EnvironmentObject var coordinator: AccountSettingsCoordinator
     
     @State private var email: String = ""
     @State private var password: String = ""
@@ -19,6 +18,19 @@ struct AccountSignIn: View {
     
     var body: some View {
         VStack {
+            VStack(alignment: .leading, spacing: 4) {
+                 Text(isRegistering ? "Create Account" : "Sign In")
+                     .font(.title2)
+                     .fontWeight(.semibold)
+                 
+                 Text(isRegistering
+                     ? "Get started by creating your account"
+                     : "Welcome back")
+                     .font(.subheadline)
+                     .foregroundColor(.secondary)
+             }
+             .padding(.bottom, 8)
+            
             Form {
                 Section {
                     if isRegistering {
@@ -40,10 +52,17 @@ struct AccountSignIn: View {
                     }
                     .textContentType(isRegistering ? .newPassword : .password)
                     .autocorrectionDisabled()
+                    .onSubmit {
+                        if isRegistering {
+                            authVM.register(email: email, password: password, name: name)
+                        } else {
+                            authVM.signIn(email: email, password: password)
+                        }
+                    }
                 } footer: {
                     if !isRegistering {
                         Button("Forgot Password?") {
-                            authVM.resetPassword(email: email)
+//                            authVM.resetPassword(email: email) TODO
                         }
                         .font(.caption)
                         .padding(.top, 4)
@@ -53,7 +72,7 @@ struct AccountSignIn: View {
             
             VStack {
                 HStack {
-                    Button(isRegistering ? "Already have an account?" : "Create Account") {
+                    Button(isRegistering ? "Already have an account?" : "Don't have an account?") {
                         withAnimation {
                             isRegistering.toggle()
                         }
@@ -64,10 +83,6 @@ struct AccountSignIn: View {
                     Spacer()
                     
                     HStack {
-                        Button("Cancel") {
-                            coordinator.hideAccountSignIn()
-                        }
-                        .disabled(authVM.isLoading)
                         
                         Button(action: {
                             if isRegistering {
@@ -90,10 +105,10 @@ struct AccountSignIn: View {
             }
         }
         .padding()
-        .onChange(of: authVM.alertState) { _, newState in
-            if newState == .loginSuccess || newState == .registrationSuccess {
-                coordinator.hideAccountSignIn()
-            }
+        .alert("Account", isPresented: $authVM.showAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(authVM.alertState.message)
         }
     }
 }

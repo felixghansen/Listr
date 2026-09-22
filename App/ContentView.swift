@@ -62,10 +62,8 @@ struct ContentView: View {
             .toolbar {
                 CollectionToolbar.importButton(
                     onImport: {
-                        if let user = auth.user, user.isEmailVerified {
+                        if auth.user != nil {
                             controller.openFolderPicker()
-                        } else {
-                            authVM.sendVerification()
                         }
                     }
                 )
@@ -93,24 +91,13 @@ struct ContentView: View {
                 .transition(.opacity.combined(with: .scale(scale: 0.98)))
                 .animation(.snappy, value: controller.isAnalyzing)
             }
-        }
-        .alert("Account", isPresented: $authVM.showAlert) {
-            if authVM.alertState == .registrationSuccess || authVM.alertState == .unverifiedAction {
-                Button(authVM.canResend ? "Resend Verification" : "Wait (\(authVM.resendCooldown)s)") {
-                    authVM.sendVerification()
-                }
-                .disabled(!authVM.canResend)
+            
+            // TODO
+            if let errorMessage = controller.errorMessage {
+                Text(errorMessage)
+                    .foregroundStyle(.red)
+                    .padding()
             }
-            Button("OK", role: .cancel) {
-                switch authVM.alertState {
-                case .registrationSuccess, .loginSuccess:
-                    coordinator.hideAccountSignIn()
-                default:
-                    break
-                }
-            }
-        } message: {
-            Text(authVM.alertState.message)
         }
         .onAppear {
             postcardRepo.startListening(for: PostcardFilter())

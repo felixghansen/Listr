@@ -10,20 +10,20 @@ import SwiftUI
 
 struct AccountSettings: View {
     @EnvironmentObject var authVM: AuthViewModel
-    @EnvironmentObject var coordinator: AccountSettingsCoordinator
+    @Binding var showSettings: Bool
     
     var body: some View {
         VStack {
             Text("Account")
                 .font(.headline)
             
-            HStack {
+            HStack { // TODO delete account button
                 Spacer()
                 Button("Sign out") {
                     authVM.signOut()
                 }
-                Button("Done") {
-                    coordinator.hideAccountSettings()
+                Button("Done") { // "Close"?
+                    showSettings = false
                 }
                 .buttonStyle(.borderedProminent)
             }

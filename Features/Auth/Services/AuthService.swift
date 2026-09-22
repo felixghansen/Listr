@@ -14,12 +14,24 @@ final class AuthService: ObservableObject {
     @Published var user: User?
     
     private init() {
-        Auth.auth().addStateDidChangeListener { [weak self] _, user in
-            // NOTE: This doesn't run when user is deleted, it only listens to signOut()
-            if let user = user, user.isEmailVerified {
-                self?.user = user
+        _ = Auth.auth().addStateDidChangeListener { [weak self] _, user in
+            self?.user = user
+        }
+    }
+    
+    func refreshVerificationStatus(completion: @escaping (Result<Void, Error>) -> Void) {
+        guard let user = Auth.auth().currentUser else {
+            let error = NSError(domain: "AuthService", code: 404, userInfo: [NSLocalizedDescriptionKey: "No active session found."])
+            completion(.failure(error))
+            return
+        }
+        
+        user.reload { error in
+            if let error = error {
+                completion(.failure(error))
             } else {
-                self?.user = nil
+                self.user = Auth.auth().currentUser
+                completion(.success(()))
             }
         }
     }
@@ -29,7 +41,11 @@ final class AuthService: ObservableObject {
             if let error = error {
                 completion(.failure(error))
             } else {
-                completion(.success(()))
+                if let user = Auth.auth().currentUser, !user.isEmailVerified {
+                    self.sendVerification(completion: completion)
+                } else {
+                    completion(.success(()))
+                }
             }
         }
     }
@@ -54,9 +70,7 @@ final class AuthService: ObservableObject {
             self.updateDisplayName(to: name) { nameResult in
                 switch nameResult {
                 case .success:
-                    self.sendVerification { verificationResult in
-                        completion(verificationResult)
-                    }
+                    self.sendVerification(completion: completion)
                 case .failure(let error):
                     completion(.failure(error))
                 }

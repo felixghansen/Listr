@@ -1,12 +1,19 @@
 import Foundation
 import FirebaseStorage
 import AppKit
+import FirebaseAuth
 
 @MainActor
 final class StorageManager {
     static let shared = StorageManager()
     private let storage = Storage.storage()
-    private let userID: String = config.userID
+    
+    private var userID: String {
+        guard let uid = Auth.auth().currentUser?.uid else {
+            fatalError("StorageManager accessed without authentication")
+        }
+        return uid
+    }
     
     private init() {}
     
@@ -14,8 +21,9 @@ final class StorageManager {
         guard let tiffData = image.tiffRepresentation,
               let bitmap = NSBitmapImageRep(data: tiffData),
               let data = bitmap.representation(using: .jpeg, properties: [:]) else {
-            throw NSError(domain: "UploadError", code: 0,
-                          userInfo: [NSLocalizedDescriptionKey: "Failed to convert NSImage to JPEG data"])
+            throw NSError(
+                domain: "UploadError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to convert NSImage to JPEG data"]
+            )
         }
 
         let path = "users/\(userID)/batches/\(batchID)/\(fileName)"

@@ -7,6 +7,7 @@
 
 import Foundation
 import FirebaseFirestore
+import FirebaseAuth
 
 @MainActor
 final class BatchRepository: ObservableObject {
@@ -14,10 +15,15 @@ final class BatchRepository: ObservableObject {
     private init() {}
     
     private let db = Firestore.firestore()
-    private let userID: String = config.userID
+    private var userID: String? {
+        Auth.auth().currentUser?.uid
+    }
     
     var batchesCollection: CollectionReference {
-        db.collection("users").document(userID).collection("batches")
+        guard let userID = userID else {
+            fatalError("BatchRepository accessed without authentication")
+        }
+        return db.collection("users").document(userID).collection("batches")
     }
     
     @Published private(set) var cachedBatches: [PostcardBatch] = []

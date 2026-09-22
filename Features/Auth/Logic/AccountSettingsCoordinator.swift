@@ -9,15 +9,6 @@ import Foundation
 
 class AccountSettingsCoordinator: ObservableObject {
     @Published var isShowingAccount = false
-    @Published var isShowingAccountSignIn: Bool = false
-    
-    func showAccountSignIn(){
-        isShowingAccountSignIn = true
-    }
-    
-    func hideAccountSignIn(){
-        isShowingAccountSignIn = false
-    }
     
     func showAccountSettings() {
         isShowingAccount = true
