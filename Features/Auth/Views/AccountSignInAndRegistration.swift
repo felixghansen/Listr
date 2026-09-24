@@ -16,20 +16,21 @@ struct AccountSignInAndRegistration: View {
     @State private var name: String = ""
     @State private var isRegistering: Bool = false
     
+    @State private var isHoveringForgotPassword = false
+    
     var body: some View {
-        VStack {
-            VStack(alignment: .leading, spacing: 4) {
+        VStack(spacing: 24) {
+            VStack {
                  Text(isRegistering ? "Create Account" : "Sign In")
                      .font(.title2)
                      .fontWeight(.semibold)
                  
-                 Text(isRegistering
-                     ? "Get started by creating your account"
-                     : "Welcome back")
-                     .font(.subheadline)
-                     .foregroundColor(.secondary)
+//                 Text(isRegistering
+//                     ? "Get started by creating your account"
+//                     : "Welcome back")
+//                     .font(.subheadline)
+//                     .foregroundColor(.secondary)
              }
-             .padding(.bottom, 8)
             
             Form {
                 Section {
@@ -61,11 +62,14 @@ struct AccountSignInAndRegistration: View {
                     }
                 } footer: {
                     if !isRegistering {
-                        Button("Forgot Password?") {
-//                            authVM.resetPassword(email: email) TODO
+                        HStack {
+//                            Spacer()
+                            
+                            Button("Forgot Password?") {}
+                                .buttonStyle(.link)
+                                .foregroundStyle(.secondary)
                         }
-                        .font(.caption)
-                        .padding(.top, 4)
+                        
                     }
                 }
             }
@@ -104,11 +108,11 @@ struct AccountSignInAndRegistration: View {
                 }
             }
         }
-        .padding()
-        .alert("Account", isPresented: $authVM.showAlert) {
-            Button("OK", role: .cancel) { }
-        } message: {
-            Text(authVM.alertState.message)
-        }
+        .padding(.all, 24)
     }
+}
+
+#Preview {
+    AccountSignInAndRegistration()
+        .environmentObject(AuthViewModel())
 }
