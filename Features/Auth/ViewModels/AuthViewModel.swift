@@ -55,7 +55,7 @@ final class AuthViewModel: ObservableObject {
             self.isLoading = false
             switch result {
             case .success:
-                if let user = Auth.auth().currentUser {
+                if Auth.auth().currentUser != nil {
                     self.needsVerification = true
                 }
             case .failure(let error):
