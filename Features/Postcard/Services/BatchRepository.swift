@@ -26,23 +26,25 @@ final class BatchRepository: ObservableObject {
         return db.collection("users").document(userID).collection("batches")
     }
     
-    @Published private(set) var cachedBatches: [PostcardBatch] = []
+    @Published private(set) var batches: [PostcardBatch] = []
     
     private var listener: ListenerRegistration?
     
     func startListening() {
         stopListening()
-        listener = batchesCollection.addSnapshotListener { [weak self] snapshot, error in
-            guard let self, let snapshot else { return }
-            
-            let batches = snapshot.documents.compactMap { doc in
-                try? doc.data(as: PostcardBatch.self)
+        listener = batchesCollection
+            .order(by: "scannedAt", descending: true)
+            .addSnapshotListener { [weak self] snapshot, error in
+                guard let self, let snapshot else { return }
+                
+                let batches = snapshot.documents.compactMap { doc in
+                    try? doc.data(as: PostcardBatch.self)
+                }
+                
+                Task { @MainActor in
+                    self.batches = batches
+                }
             }
-            
-            Task { @MainActor in
-                self.cachedBatches = batches
-            }
-        }
     }
     
     func stopListening() {

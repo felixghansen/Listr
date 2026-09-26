@@ -7,11 +7,14 @@
 
 import Foundation
 
-enum PostcardSortOrder: String, CaseIterable, Identifiable {
-    case newest = "Newest First"
-    case oldest = "Oldest First"
-    case priceHigh = "Price: High to Low"
-    case priceLow = "Price: Low to High"
+struct PostcardSortOrder: Equatable {
+    var field: Field = .dateScanned
+    var descending = true
 
-    var id: Self { self }
+    enum Field: String, CaseIterable, Identifiable {
+        case dateScanned = "Date Scanned"
+        case price = "Price"
+
+        var id: Self { self }
+    }
 }

@@ -5,7 +5,7 @@ struct PostcardGallery: View {
     let postcards: [PostcardSummary]
     let isSelected: (PostcardSummary) -> Bool
     let onSelect: (PostcardSummary) -> Void
-    let clearSelectedIDs: () -> Void
+    let clearSelection: () -> Void
     
     @State private var cardWidth: CGFloat = 175
 
@@ -32,7 +32,7 @@ struct PostcardGallery: View {
                 }
                 .padding()
             }
-            .onTapGesture { clearSelectedIDs() }
+            .onTapGesture { clearSelection() }
             HStack {
                 Spacer()
                     .frame(width: 100)

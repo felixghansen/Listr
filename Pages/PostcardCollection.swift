@@ -9,35 +9,58 @@ import SwiftUI
 
 struct PostcardCollection: View {
     let postcards: [PostcardSummary]
-    @Binding var selectedIDs: Set<String>
-    @State private var anchorID: String?
+    @Binding var selectedPostcards: [PostcardDetails]
+
+    private let postcardRepo = PostcardRepository.shared
+    @State private var loadingIDs: Set<String> = []
+
+    private var selectedIDs: Set<String> {
+        Set(selectedPostcards.compactMap(\.id))
+    }
 
     var body: some View {
         PostcardGallery(
             postcards: postcards,
             isSelected: { selectedIDs.contains($0.id) },
-            onSelect: { handleselectedIDs($0.id) },
-            clearSelectedIDs: { selectedIDs = [] }
+            onSelect: { handleSelection($0) },
+            clearSelection: { selectedPostcards = [] }
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    private func handleselectedIDs(_ id: String) {
+    private func handleSelection(_ postcard: PostcardSummary) {
+        let id = postcard.id
+
         #if os(macOS)
         let flags = NSApp.currentEvent?.modifierFlags ?? []
+        let isMultiSelecting = flags.contains(.command) || flags.contains(.shift)
+        #else
+        let isMultiSelecting = false
         #endif
 
-        if flags.contains(.command) {
-            if selectedIDs.contains(id) { selectedIDs.remove(id) } else { selectedIDs.insert(id) }
-            anchorID = id
-        } else if flags.contains(.shift), let anchor = anchorID,
-                  let start = postcards.firstIndex(where: { $0.id == anchor }),
-                  let end = postcards.firstIndex(where: { $0.id == id }) {
-            let range = min(start, end)...max(start, end)
-            selectedIDs = Set(postcards[range].map(\.id))
-        } else {
-            selectedIDs = [id]
-            anchorID = id
+        if isMultiSelecting && selectedIDs.contains(id) {
+            selectedPostcards.removeAll { $0.id == id }
+            return
+        }
+
+        guard !loadingIDs.contains(id) else { return }
+        loadingIDs.insert(id)
+
+        Task {
+            defer { loadingIDs.remove(id) }
+
+            do {
+                let details = try await postcardRepo.details(for: id)
+                guard !selectedIDs.contains(id) else { return }
+
+                if isMultiSelecting {
+                    selectedPostcards.append(details)
+                } else {
+                    selectedPostcards = [details]
+                }
+            } catch {
+                print("Failed to load postcard details: \(error)")
+            }
         }
     }
 }

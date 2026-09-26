@@ -157,16 +157,14 @@ final class PostcardRepository: ObservableObject {
             query = query.whereField("batchID", isEqualTo: id)
         }
 
-        switch sortOrder {
-        case .newest:
-            query = query.order(by: "scannedAt", descending: true)
-        case .oldest:
-            query = query.order(by: "scannedAt", descending: false)
-        case .priceHigh:
-            query = query.order(by: "aiData.suggestedPriceCAD.price", descending: true)
-        case .priceLow:
-            query = query.order(by: "aiData.suggestedPriceCAD.price", descending: false)
+        let sortField: String
+        switch sortOrder.field {
+        case .dateScanned:
+            sortField = "scannedAt"
+        case .price:
+            sortField = "aiData.suggestedPriceCAD.price"
         }
+        query = query.order(by: sortField, descending: sortOrder.descending)
 
         return query
     }
