@@ -109,6 +109,11 @@ struct AccountSignInAndRegistration: View {
             }
         }
         .padding(.all, 24)
+        .alert("Account", isPresented: $authVM.showAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(authVM.alertState.message)
+        }
     }
 }
 
