@@ -15,16 +15,17 @@ struct VerificationScreen: View {
         VStack {
             Form {
                 Section {
-                    VStack(alignment: .center, spacing: 12) {
+                    VStack(spacing: 8) {
                         Image(systemName: "envelope.badge.shield.half.filled")
-                            .font(.system(size: 36))
+                            .font(.system(size: 24))
                             .foregroundStyle(.blue)
                         
                         Text("Verify Your Email")
+                            .font(.title2)
                             .fontWeight(.semibold)
                         
                         Text("We sent a verification link to your email. Click it to access Listr.")
-                            .font(.caption)
+                            .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
                     }
@@ -75,4 +76,9 @@ struct VerificationScreen: View {
         }
         .padding()
     }
+}
+
+#Preview {
+    VerificationScreen()
+        .environmentObject(AuthViewModel())
 }
