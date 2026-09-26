@@ -52,43 +52,43 @@ struct EditorContent: View {
                     Divider()
                     
                     BasicInfoSection(
-                        title: $editor.draft.aiData.title,
-                        description: $editor.draft.aiData.description,
-                        era: $editor.draft.aiData.era
+                        title: $editor.draft.title,
+                        description: $editor.draft.description,
+                        era: $editor.draft.era
                     )
                     
                     Divider()
                     
                     TypeSection(
-                        material: $editor.draft.aiData.type.material,
-                        style: $editor.draft.aiData.type.style
+                        material: $editor.draft.type.material,
+                        style: $editor.draft.type.style
                     )
                     
                     Divider()
                     
                     PostalInfoSection(
-                        postmarkDate: $editor.draft.aiData.postmarkDate,
-                        mailingOrigin: $editor.draft.aiData.mailingOrigin
+                        postmarkDate: $editor.draft.postmarkDate,
+                        mailingOrigin: $editor.draft.mailingOrigin
                     )
                     
                     Divider()
                     
                     PublisherSection(
-                        publisher: $editor.draft.aiData.publisher,
-                        condition: $editor.draft.aiData.condition
+                        publisher: $editor.draft.publisher,
+                        condition: $editor.draft.condition
                     )
                     
                     Divider()
                     
                     KeywordsSection(
-                        keywords: $editor.draft.aiData.keywords
+                        keywords: $editor.draft.keywords
                     )
                     
                     Divider()
                     
                     PricingSection(
-                        price: $editor.draft.aiData.suggestedPriceCAD.price,
-                        auctionStart: $editor.draft.aiData.suggestedPriceCAD.auctionStart
+                        price: $editor.draft.suggestedPriceCAD.price,
+                        auctionStart: $editor.draft.suggestedPriceCAD.auctionStart
                     )
                     
                     Divider()
@@ -96,14 +96,12 @@ struct EditorContent: View {
                     MetadataSection(
                         scannedAt: postcard.scannedAt,
                         batchID: postcard.batchID,
-                        ebayCategoryID: $editor.draft.aiData.ebayCategoryID
+                        ebayCategoryID: $editor.draft.ebayCategoryID
                     )
                     
                     HStack {
                         Button {
-                            guard let updated = editor.commitAndReset() else {
-                                return
-                            }
+                            let updated = editor.commitAndReset()
                             
                             Task {
                                 try await PostcardRepository.shared.updatePostcard(updated)

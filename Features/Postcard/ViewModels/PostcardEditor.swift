@@ -7,38 +7,30 @@
 
 import SwiftUI
 
+// holds the original and draft copy of the postcard details
 @MainActor
 final class PostcardEditor: ObservableObject {
     private var original: PostcardDetails
-    @Published var draft: PostcardDetailsDraft
+    @Published var draft: PostcardAIData
 
     var hasChanges: Bool {
-        draft.aiData != original.aiData
+        draft != original.aiData
     }
-    
+
     init(postcard: PostcardDetails) {
-        self.original = postcard
-        self.draft = PostcardDetailsDraft(from: postcard)
+        original = postcard
+        draft = postcard.aiData
     }
 
     func reset(with postcard: PostcardDetails) {
-        self.original = postcard
-        self.draft = PostcardDetailsDraft(from: postcard)
-    }
-
-    func commitAndReset() -> PostcardDetails? {
-        guard let updated = commit() else { return nil }
-        reset(with: updated)
-
-        return updated
+        original = postcard
+        draft = postcard.aiData
     }
     
-    private func commit() -> PostcardDetails? {
-        guard draft.id == original.id else {
-            assert(draft.id == original.id)
-            return nil
-        }
-
-        return PostcardDetails(updating: original, with: draft)
+    func commitAndReset() -> PostcardDetails {
+        var updated = original
+        updated.update(aiData: draft)
+        reset(with: updated)
+        return updated
     }
 }

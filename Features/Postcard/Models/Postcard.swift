@@ -67,6 +67,18 @@ extension PostcardDetails {
     }
 }
 
+extension PostcardDetails {
+    // must be mutating to change its properties
+    mutating func update(aiData newAIData: PostcardAIData) {
+        aiData = newAIData
+
+        // Once a postcard is listed or sold, editing its details shouldn't change its status
+        if status == .needsReview || status == .readyToList {
+            status = Self.containsUnknownFields(in: newAIData) ? .needsReview : .readyToList
+        }
+    }
+}
+
 enum PostcardStatus: String, Codable, CaseIterable, Equatable {
     case needsReview = "needs review"
     case readyToList = "ready to list"
