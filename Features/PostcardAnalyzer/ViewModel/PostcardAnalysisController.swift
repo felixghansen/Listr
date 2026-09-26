@@ -1,33 +1,37 @@
 import Foundation
 import AppKit
-import FirebaseFirestore
 
 @MainActor
 final class PostcardAnalysisController: ObservableObject {
-    
     @Published var isAnalyzing = false
     @Published var errorMessage: String?
-    
-    @Published var totalImages: Int = 0
-    @Published var imagesAnalyzed: Int = 0
-    
+    @Published var totalImages = 0
+    @Published var imagesAnalyzed = 0
+
     private let analyzer = PostcardAnalyzer()
-    
-    private let db = Firestore.firestore()
     private let decoder = JSONDecoder()
     private let imageExtensions = ["jpg", "jpeg", "png"]
-    
-    private let batchSize = 6 // 3 postcards (front + back)
-    
+
+    // Images sent to the AI per request: 3 postcards, front + back
+    private let imagesPerRequest = 6
+
     private var analysisTask: Task<Void, Never>?
 
-    func analyzeFolder(_ folderURL: URL) async {
-        // If something is already running, cancel it before starting a new one
-        analysisTask?.cancel()
+    func openFolderPicker() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.allowsMultipleSelection = false
 
+        if panel.runModal() == .OK, let folderURL = panel.url {
+            analyzeFolder(folderURL)
+        }
+    }
+
+    func analyzeFolder(_ folderURL: URL) {
+        analysisTask?.cancel()
         analysisTask = Task { [weak self] in
-            guard let self else { return }
-            await self.runAnalysis(folderURL)
+            await self?.runAnalysis(folderURL)
         }
     }
 
@@ -36,158 +40,102 @@ final class PostcardAnalysisController: ObservableObject {
         analysisTask = nil
         isAnalyzing = false
     }
+    
 
     private func runAnalysis(_ folderURL: URL) async {
         do {
-            try Task.checkCancellation()
-
-            let files = try FileManager.default.contentsOfDirectory(at: folderURL, includingPropertiesForKeys: nil)
-            let imageFiles = files
+            let imageFiles = try FileManager.default
+                .contentsOfDirectory(at: folderURL, includingPropertiesForKeys: nil)
                 .filter { imageExtensions.contains($0.pathExtension.lowercased()) }
                 .sorted { $0.lastPathComponent < $1.lastPathComponent }
 
-            let images = imageFiles.compactMap { NSImage(contentsOf: $0) }
-            guard !images.isEmpty else {
-                await MainActor.run {
-                    self.errorMessage = "No valid images found in folder."
-                }
+            guard !imageFiles.isEmpty else {
+                errorMessage = "No valid images found in folder."
                 return
             }
 
-            await MainActor.run {
-                self.totalImages = imageFiles.count
-                self.imagesAnalyzed = 0
-                self.isAnalyzing = true
-                self.errorMessage = nil
-            }
+            totalImages = imageFiles.count
+            imagesAnalyzed = 0
+            errorMessage = nil
+            isAnalyzing = true
 
             let batchID = BatchRepository.shared.createNewBatchID()
 
-            let batches = stride(from: 0, to: images.count, by: batchSize).map { index in
-                Array(images[index..<min(index + batchSize, images.count)])
+            // Split the files into groups, one AI request per group
+            let imageGroups = stride(from: 0, to: imageFiles.count, by: imagesPerRequest).map {
+                Array(imageFiles[$0..<min($0 + imagesPerRequest, imageFiles.count)])
             }
 
-            try await withThrowingTaskGroup(of: (String, Int).self) { group in
-                for (index, batch) in batches.enumerated() {
-                    try Task.checkCancellation()
-                    group.addTask {
+            try await withThrowingTaskGroup(of: (json: String, imageGroup: [URL]).self) { taskGroup in
+                for imageGroup in imageGroups {
+                    taskGroup.addTask {
                         try Task.checkCancellation()
-                        let jsonString = try await self.analyzer.analyzePostcardImages(images: batch)
-                        return (jsonString, index)
+                        let images = imageGroup.compactMap { NSImage(contentsOf: $0) }
+                        let json = try await self.analyzer.analyzePostcardImages(images: images)
+                        return (json, imageGroup)
                     }
                 }
 
-                for try await (jsonString, index) in group {
+                for try await result in taskGroup {
                     try Task.checkCancellation()
-                    await self.handleAnalysisBatch(jsonString, index: index, batchID: batchID, imageFiles: imageFiles)
+                    await saveResult(result.json, imageGroup: result.imageGroup, batchID: batchID)
                 }
             }
         } catch is CancellationError {
-            // Swallow cancellation gracefully
+            // Cancelled by the user, nothing to report
         } catch {
-            await MainActor.run {
-                self.errorMessage = "Analysis failed: \(error.localizedDescription)"
-            }
+            errorMessage = "Analysis failed: \(error.localizedDescription)"
         }
 
-        await MainActor.run {
-            self.isAnalyzing = false
-        }
+        isAnalyzing = false
     }
-    
-    func openFolderPicker() {
-        let panel = NSOpenPanel()
-        panel.canChooseDirectories = true
-        panel.canChooseFiles = false
-        panel.allowsMultipleSelection = false
 
-        if panel.runModal() == .OK, let folderURL = panel.url {
-            Task {
-                await analyzeFolder(folderURL)
-            }
-        }
-    }
-    
-    private func handleAnalysisBatch(_ jsonString: String, index: Int, batchID: String, imageFiles: [URL]) async {
-        print("handleAnalysisBatch \(index)")
-        guard let jsonData = jsonString.data(using: .utf8) else {
-            let message = "Batch \(index): Failed to convert JSON string to Data."
-            print("❌ [handleAnalysisBatch] \(message)")
-            await MainActor.run { self.errorMessage = message }
-            return
-        }
-        
+    private func saveResult(_ json: String, imageGroup: [URL], batchID: String) async {
         do {
-            let extractedData = try decoder.decode([PostcardAIExtractedData].self, from: jsonData)
-            
-            let postcardDetails = await self.createPostcardDetails(
-                from: extractedData,
-                batchID: batchID,
-                imageFiles: imageFiles,
-                batchIndex: index
-            )
-            
-            try await PostcardRepository.shared.savePostcards(postcardDetails, toBatch: batchID)
-            
-            await MainActor.run {
-                self.imagesAnalyzed += postcardDetails.count * 2
-                self.imagesAnalyzed = min(self.imagesAnalyzed, self.totalImages)
-            }
+            let aiResults = try decoder.decode([PostcardAIData].self, from: Data(json.utf8))
+            let postcards = await createPostcards(from: aiResults, imageGroup: imageGroup, batchID: batchID)
+            try await PostcardRepository.shared.savePostcards(postcards, toBatch: batchID)
+
+            imagesAnalyzed = min(imagesAnalyzed + postcards.count * 2, totalImages)
         } catch {
-            print("❌ [handleAnalysisBatch] JSON decoding or Firestore save failed for batch \(index): \(error)")
-            await MainActor.run {
-                self.errorMessage = "Batch \(index): JSON decoding failed - \(error.localizedDescription)"
-            }
+            print("Saving analysis result failed: \(error)")
+            errorMessage = "Couldn't save some postcards: \(error.localizedDescription)"
         }
     }
-    
-    private func createPostcardDetails(
-        from aiResults: [PostcardAIExtractedData],
-        batchID: String,
-        imageFiles: [URL],
-        batchIndex: Int
-    ) async -> [PostcardDetails] {
-        var details: [PostcardDetails] = []
 
-        for (i, aiData) in aiResults.enumerated() {
-            let baseIndex = (batchIndex * batchSize) + (i * 2)
-            guard baseIndex + 1 < imageFiles.count else {
-                print("⚠️ [createPostcardDetails] Skipped postcard at index \(i) — missing image pair.")
-                continue
-            }
+    // Pairs each AI result with its front and back image, uploads the images, and builds the postcard
+    private func createPostcards(from aiResults: [PostcardAIData], imageGroup: [URL], batchID: String) async -> [PostcardDetails] {
+        var postcards: [PostcardDetails] = []
 
-            let frontLocalURL = imageFiles[baseIndex]
-            let backLocalURL = imageFiles[baseIndex + 1]
+        for (index, aiData) in aiResults.enumerated() {
+            let frontIndex = index * 2
 
-            guard let frontImage = NSImage(contentsOf: frontLocalURL),
-                  let backImage = NSImage(contentsOf: backLocalURL) else {
-                print("⚠️ [createPostcardDetails] Failed to load images at index \(i).")
+            guard frontIndex + 1 < imageGroup.count,
+                  let frontImage = NSImage(contentsOf: imageGroup[frontIndex]),
+                  let backImage = NSImage(contentsOf: imageGroup[frontIndex + 1]) else {
+                print("Skipped postcard \(index): missing or unreadable image pair")
                 continue
             }
 
             do {
-                // Upload images to Firebase Storage
+                // upload postcards to firebase
                 let postcardID = UUID().uuidString
-                let frontImageURL = try await StorageManager.shared.uploadImage(frontImage, batchID: batchID, fileName: "\(postcardID)_front.jpg")
-                let backImageURL = try await StorageManager.shared.uploadImage(backImage, batchID: batchID, fileName: "\(postcardID)_back.jpg")
+                let frontURL = try await StorageManager.shared.uploadImage(frontImage, batchID: batchID, fileName: "\(postcardID)_front.jpg")
+                let backURL = try await StorageManager.shared.uploadImage(backImage, batchID: batchID, fileName: "\(postcardID)_back.jpg")
 
                 let postcard = PostcardDetails(
                     batchID: batchID,
                     scannedAt: Date(),
-                    frontImageURLString: frontImageURL,
-                    backImageURLString: backImageURL,
+                    frontImageURLString: frontURL,
+                    backImageURLString: backURL,
                     aiData: aiData
                 )
-                
-
-                details.append(postcard)
+                postcards.append(postcard)
             } catch {
-                print("❌ [createPostcardDetails] Upload failed for postcard at index \(i): \(error)")
-                continue
+                print("Image upload failed for postcard \(index): \(error)")
             }
         }
 
-        return details
+        return postcards
     }
-
 }
