@@ -9,22 +9,48 @@ import Foundation
 import SwiftUI
 import FirebaseAuth
 
+enum SidebarItem: Hashable {
+    case all
+    case status(PostcardStatus)
+    case batch(id: String)
+}
+
 struct Sidebar: View {
-    @Binding var selectedTab: Tab
+    @Binding var selection: SidebarItem?
+    let batches: [PostcardBatch]
     @ObservedObject var auth: AuthService
 
     var body: some View {
-        List(selection: $selectedTab) {
-            NavigationLink(value: Tab.collection) {
-                Label("Collection", systemImage: "square.grid.2x2")
+        List(selection: $selection) {
+            Section("Library") {
+                Label("All Postcards", systemImage: "photo.stack")
+                    .tag(SidebarItem.all)
+
+                ForEach(PostcardStatus.allCases, id: \.self) { status in
+                    Label {
+                        Text(status.rawValue.capitalized)
+                    } icon: {
+                        Image(systemName: "circle.fill")
+                            .foregroundStyle(status.color)
+                    }
+                    .tag(SidebarItem.status(status))
+                }
+            }
+
+            Section("Batches") {
+                ForEach(batches.prefix(10), id: \.id) { batch in
+                    if let id = batch.id {
+                        Label(batch.scannedAt.formatted(date: .abbreviated, time: .omitted), systemImage: "tray")
+                            .tag(SidebarItem.batch(id: id))
+                    }
+                }
             }
         }
         .listStyle(.sidebar)
-        .frame(minWidth: 200)
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 0) {
                 Divider()
-                
+
                 SidebarUserProfile(user: auth.user)
                     .padding(.vertical, 12)
                     .padding(.horizontal, 16)
@@ -37,17 +63,17 @@ struct Sidebar: View {
 private struct SidebarUserProfile: View {
     let user: FirebaseAuth.User?
     @State private var showSettings = false
-    
+
     var body: some View {
         HStack(spacing: 12) {
             SidebarUserProfilePicture(url: user?.photoURL)
-            
+
             VStack(alignment: .leading, spacing: 0) {
                 if let user = user {
                     Text(user.displayName?.components(separatedBy: " ").first ?? "User")
                         .font(.subheadline)
                         .fontWeight(.medium)
-                    
+
                     Text("Account Settings")
                         .font(.caption2)
                         .foregroundColor(.secondary)
@@ -61,7 +87,6 @@ private struct SidebarUserProfile: View {
                         .foregroundColor(.secondary)
                 }
             }
-            
         }
         .contentShape(Rectangle())
         .onTapGesture {
@@ -75,10 +100,10 @@ private struct SidebarUserProfile: View {
 
 private struct SidebarUserProfilePicture: View {
     let url: URL?
-    
+
     var body: some View {
         ZStack {
-            if let url = url {
+            if let url {
                 AsyncImage(url: url) { image in
                     image
                         .resizable()

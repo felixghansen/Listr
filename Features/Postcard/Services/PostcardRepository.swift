@@ -1,10 +1,3 @@
-//
-//  PostcardRepository.swift
-//  Listr
-//
-//  Created by Felix on 10/21/25.
-//
-
 import Foundation
 import FirebaseFirestore
 import FirebaseAuth
@@ -13,243 +6,206 @@ import FirebaseAuth
 final class PostcardRepository: ObservableObject {
     static let shared = PostcardRepository()
     private init() {}
-    
+
+    @Published private(set) var postcards: [PostcardSummary] = []
+    @Published private(set) var isLoading = false
+    @Published private(set) var hasMorePages = true
+
     private let db = Firestore.firestore()
     private let pageSize = 50
-    
-    private var userID: String? {
-        Auth.auth().currentUser?.uid
-    }
-    
+
+    private var listener: ListenerRegistration?
+    private var currentQuery: Query?
+    private var lastDocument: DocumentSnapshot?
+    private var detailsCache: [String: PostcardDetails] = [:]
+
     var postcardsCollection: CollectionReference {
-        guard let userID = userID else {
+        guard let userID = Auth.auth().currentUser?.uid else {
             fatalError("PostcardRepository accessed without authentication")
         }
         return db.collection("users").document(userID).collection("postcards")
     }
-    
-    @Published private(set) var cachedSummaries: [PostcardSummary] = []
-    @Published private(set) var isLoading = false
-    @Published private(set) var hasMorePages = true
 
-    // Cache full details for the current page only
-    private var cachedDetails: [String: PostcardDetails] = [:]
-    
-    private var listener: ListenerRegistration?
-    private var lastDocument: DocumentSnapshot?
-    
-    func startListening(for filter: PostcardFilter) {
+    // MARK: - Loading
+
+    func listen(to item: SidebarItem, sortedBy sortOrder: PostcardSortOrder) {
         stopListening()
-        resetPagination()
-        
-        let query = makeQuery(for: filter).limit(to: pageSize)
-        
-        listener = query.addSnapshotListener { [weak self] snapshot, error in
-            guard let self, let snapshot else { return }
-            
+        postcards = []
+        detailsCache = [:]
+        lastDocument = nil
+        hasMorePages = true
+
+        let query = makeQuery(for: item, sortedBy: sortOrder)
+        currentQuery = query
+
+        listener = query.limit(to: pageSize).addSnapshotListener { [weak self] (snapshot: QuerySnapshot?, error: Error?) in
+            guard let snapshot = snapshot else { return }
             let details = snapshot.documents.compactMap { try? $0.data(as: PostcardDetails.self) }
-            let summaries = details.map { PostcardSummary(from: $0) }
-            
+
             Task { @MainActor in
-                self.cachedSummaries = summaries
+                guard let self else { return }
+                self.cache(details)
+                self.postcards = details.map(PostcardSummary.init(from:))
                 self.lastDocument = snapshot.documents.last
-                self.hasMorePages = snapshot.documents.count >= self.pageSize
-                
-                // Clear details cache when a new query/page 1 is loaded
-                self.cachedDetails.removeAll()
-                // Warm details for the current page
-                await self.warmDetails(for: summaries)
-                
-                await self.preloadImages(for: summaries)
+                self.hasMorePages = snapshot.documents.count == self.pageSize
+                await self.preloadImages(for: self.postcards)
             }
         }
-
     }
-    
+
     func stopListening() {
         listener?.remove()
         listener = nil
     }
-    
-    func loadNextPage(for filter: PostcardFilter) async throws {
-        guard hasMorePages, !isLoading else { return }
-        
+
+    func loadNextPage() async throws {
+        guard hasMorePages, !isLoading, let currentQuery else { return }
+
         isLoading = true
         defer { isLoading = false }
-        
-        var query = makeQuery(for: filter).limit(to: pageSize)
-        
-        if let lastDoc = lastDocument {
-            query = query.start(afterDocument: lastDoc)
+
+        var query = currentQuery.limit(to: pageSize)
+        if let lastDocument {
+            query = query.start(afterDocument: lastDocument)
         }
-        
+
         let snapshot = try await query.getDocuments()
-        
-        guard !snapshot.isEmpty else {
-            hasMorePages = false
-            return
-        }
-        
         let details = snapshot.documents.compactMap { try? $0.data(as: PostcardDetails.self) }
-        let summaries = details.map { PostcardSummary(from: $0) }
-        
-        // Switching to next page: clear previous page's warmed details
-        cachedDetails.removeAll()
-        // Warm details for this page (the newly fetched summaries only)
-        await warmDetails(for: summaries)
-        
-        cachedSummaries.append(contentsOf: summaries)
-        lastDocument = snapshot.documents.last
+        let newPostcards = details.map(PostcardSummary.init(from:))
+
+        cache(details)
+        postcards.append(contentsOf: newPostcards)
+        lastDocument = snapshot.documents.last ?? lastDocument
         hasMorePages = snapshot.documents.count == pageSize
+
+        await preloadImages(for: newPostcards)
     }
-    
-    func resetPagination() {
-        cachedSummaries = []
-        lastDocument = nil
-        hasMorePages = true
-        isLoading = false
-        cachedDetails.removeAll()
+
+    func details(for id: String) async throws -> PostcardDetails {
+        if let cached = detailsCache[id] {
+            return cached
+        }
+        let details = try await postcardsCollection.document(id).getDocument(as: PostcardDetails.self)
+        detailsCache[id] = details
+        return details
     }
-    
-    private func preloadImages(for summaries: [PostcardSummary]) async {
-        await withTaskGroup(of: Void.self) { group in
-            for summary in summaries {
-                if let frontURL = summary.frontImageURL {
-                    group.addTask { await self.preloadImage(url: frontURL) }
-                }
-                if let backURL = summary.backImageURL {
-                    group.addTask { await self.preloadImage(url: backURL) }
-                }
+
+    // MARK: - Saving and deleting
+
+    func savePostcards(_ newPostcards: [PostcardDetails], toBatch batchID: String) async throws {
+        var postcardIDs: [String] = []
+
+        for postcard in newPostcards {
+            let document = postcardsCollection.document()
+            try document.setData(from: postcard)
+            postcardIDs.append(document.documentID)
+        }
+
+        // Must match the PostcardBatch model
+        try await BatchRepository.shared.batchesCollection.document(batchID).setData([
+            "scannedAt": Timestamp(date: Date()),
+            "count": FieldValue.increment(Int64(newPostcards.count)),
+            "postcardIDs": FieldValue.arrayUnion(postcardIDs)
+        ], merge: true)
+    }
+
+    func updatePostcard(_ postcard: PostcardDetails) async throws {
+        guard let id = postcard.id else { return }
+
+        try postcardsCollection.document(id).setData(from: postcard, merge: true)
+
+        detailsCache[id] = postcard
+        if let index = postcards.firstIndex(where: { $0.id == id }) {
+            postcards[index] = PostcardSummary(from: postcard)
+        }
+    }
+
+    func deletePostcard(_ postcard: PostcardDetails) async throws {
+        guard let id = postcard.id else { return }
+
+        try await postcardsCollection.document(id).delete()
+        removeFromCache(ids: [id])
+
+        try await BatchRepository.shared.deletePostcard(postcard)
+    }
+
+    func deletePostcards(_ postcardsToDelete: [PostcardDetails]) async throws {
+        let ids = postcardsToDelete.compactMap(\.id)
+        
+        // atomic commit
+        let deleteBatch = db.batch()
+        for id in ids {
+            deleteBatch.deleteDocument(postcardsCollection.document(id))
+        }
+        try await deleteBatch.commit()
+        removeFromCache(ids: Set(ids))
+
+        await BatchRepository.shared.deletePostcards(postcardsToDelete)
+    }
+
+    // MARK: - Helpers
+
+    private func makeQuery(for item: SidebarItem, sortedBy sortOrder: PostcardSortOrder) -> Query {
+        var query: Query = postcardsCollection
+
+        switch item {
+        case .all:
+            break
+        case .status(let status):
+            query = query.whereField("status", isEqualTo: status.rawValue)
+        case .batch(let id):
+            query = query.whereField("batchID", isEqualTo: id)
+        }
+
+        switch sortOrder {
+        case .newest:
+            query = query.order(by: "scannedAt", descending: true)
+        case .oldest:
+            query = query.order(by: "scannedAt", descending: false)
+        case .priceHigh:
+            query = query.order(by: "aiData.suggestedPriceCAD.price", descending: true)
+        case .priceLow:
+            query = query.order(by: "aiData.suggestedPriceCAD.price", descending: false)
+        }
+
+        return query
+    }
+
+    private func cache(_ details: [PostcardDetails]) {
+        for postcard in details {
+            if let id = postcard.id {
+                detailsCache[id] = postcard
             }
         }
     }
 
-    private func preloadImage(url: URL) async {
+    private func removeFromCache(ids: Set<String>) {
+        for id in ids {
+            detailsCache[id] = nil
+        }
+        postcards.removeAll { ids.contains($0.id) }
+    }
+
+    private func preloadImages(for summaries: [PostcardSummary]) async {
+        let urls = summaries.flatMap { [$0.frontImageURL, $0.backImageURL] }.compactMap { $0 }
+
+        await withTaskGroup(of: Void.self) { group in
+            for url in urls {
+                group.addTask { await Self.preloadImage(url: url) }
+            }
+        }
+    }
+
+    // doesn't need to run on main actor
+    private nonisolated static func preloadImage(url: URL) async {
         if await ImageCache.shared.data(for: url) != nil { return }
-        
+
         do {
             let (data, _) = try await URLSession.shared.data(from: url)
             await ImageCache.shared.insert(data, for: url)
         } catch {
-            print("Preload failed for \(url):", error)
+            print("Image preload failed for \(url): \(error)")
         }
-    }
-    
-    func savePostcards(_ postcards: [PostcardDetails], toBatch batchID: String) async throws {
-        let batchRef = BatchRepository.shared.batchesCollection.document(batchID)
-        var postcardIDs: [String] = []
-        
-        for postcard in postcards {
-            let docRef = postcardsCollection.document()
-            try docRef.setData(from: postcard)
-            postcardIDs.append(docRef.documentID)
-        }
-        
-        try await batchRef.setData([ // THIS MUST MATCH POSTCARDBATCH MODEL
-            "scannedAt": Timestamp(date: Date()),
-            "count": FieldValue.increment(Int64(postcards.count)),
-            "postcardIDs": FieldValue.arrayUnion(postcardIDs)
-        ], merge: true)
-    }
-    
-    func updatePostcard(_ postcard: PostcardDetails) async throws {
-        guard let id = postcard.id else {
-            assertionFailure("Cannot update postcard without ID")
-            return
-        }
-
-        try postcardsCollection
-            .document(id)
-            .setData(from: postcard, merge: true)
-        
-        cachedDetails[id] = postcard
-        if let index = cachedSummaries.firstIndex(where: { $0.id == id }) {
-            cachedSummaries[index] = PostcardSummary(from: postcard)
-        }
-    }
-    
-    func deletePostcard(_ postcard: PostcardDetails) async throws {
-        guard let id = postcard.id else {
-            assertionFailure("Cannot update postcard without ID")
-            return
-        }
-        
-        try await postcardsCollection
-            .document(id)
-            .delete()
-        
-        cachedDetails.removeValue(forKey: id)
-        cachedSummaries.removeAll { $0.id == id }
-        
-        try await BatchRepository.shared.deletePostcard(postcard)
-    }
-
-    func deletePostcards(_ postcards: [PostcardDetails]) async throws {
-        let batch = db.batch()
-        for p in postcards {
-            guard let id = p.id else { continue }
-            batch.deleteDocument(postcardsCollection.document(id))
-        }
-        try await batch.commit()
-        
-        for p in postcards {
-            if let id = p.id {
-                cachedDetails.removeValue(forKey: id)
-            }
-        }
-        cachedSummaries.removeAll { summary in postcards.contains { $0.id == summary.id } }
-        
-        await BatchRepository.shared.deletePostcards(postcards)
-    }
-     
-    func getPostcardDetails(id: String) async throws -> PostcardDetails {
-        if let cached = cachedDetails[id] { return cached }
-        let doc = try await postcardsCollection.document(id).getDocument()
-        let details = try doc.data(as: PostcardDetails.self)
-        cachedDetails[id] = details
-        return details
-    }
-    
-    private func warmDetails(for summaries: [PostcardSummary]) async {
-        await withTaskGroup(of: Void.self) { group in
-            for summary in summaries {
-                group.addTask { [weak self] in
-                    guard let self else { return }
-                    let id = summary.id
-                    if await self.cachedDetails[id] != nil { return }
-                    do {
-                        let details = try await self.getPostcardDetails(id: id)
-                        await MainActor.run {
-                            self.cachedDetails[id] = details
-                        }
-                    } catch { }
-                }
-            }
-        }
-    }
-    
-    private func makeQuery(for filter: PostcardFilter) -> Query {
-        var query: Query = postcardsCollection
-        
-        if let status = filter.status {
-            query = query.whereField("status", isEqualTo: status.rawValue)
-        }
-        
-        switch filter.batchFilter {
-            case .selected:
-                query = query.whereField("batchID", in: Array(filter.batchFilter.batchIDs))
-            case .none:
-                break
-        }
-        
-        switch filter.sortOrder {
-            case .scannedAt(let descending):
-                query = query.order(by: "scannedAt", descending: descending)
-            case .price(let descending):
-                query = query.order(by: "aiData.suggestedPriceCAD.price", descending: descending)
-        }
-        
-        return query
     }
 }
 

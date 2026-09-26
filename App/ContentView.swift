@@ -43,13 +43,13 @@ struct ContentView: View {
     
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
-            Sidebar(selectedTab: $selectedTab, auth: auth)
+            Sidebar(selection: $sidebarSelection, batches: batchRepo.batches, auth: auth)
                 .navigationSplitViewColumnWidth(200)
         } detail: {
             VStack {
                 switch selectedTab {
                 case .collection:
-                    Collection(postcards: visiblePostcards, selectedPostcards: $selectedPostcards, postcardRepository: postcardRepo)
+                    PostcardCollection(postcards: visiblePostcards, selectedIDs: $selectedPostcards)
                 }
             }
             .frame(minWidth: 500)
