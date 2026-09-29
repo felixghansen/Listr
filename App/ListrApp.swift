@@ -1,5 +1,6 @@
 import SwiftUI
 import FirebaseCore
+import FirebaseAppCheck
 
 @main
 struct YourApp: App {
@@ -8,8 +9,10 @@ struct YourApp: App {
     @StateObject var coordinator = AccountSettingsCoordinator()
     
     init() {
+        let providerFactory = AppCheckDebugProviderFactory()
+        AppCheck.setAppCheckProviderFactory(providerFactory)
         FirebaseApp.configure()
-    }
+      }
 
     var body: some Scene {
         WindowGroup {

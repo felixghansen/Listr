@@ -14,6 +14,8 @@ final class AuthService: ObservableObject {
     @Published var user: User?
     
     private init() {
+        user = Auth.auth().currentUser
+        
         _ = Auth.auth().addStateDidChangeListener { [weak self] _, user in
             self?.user = user
         }
