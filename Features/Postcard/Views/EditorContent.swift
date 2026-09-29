@@ -33,122 +33,117 @@ struct EditorContent: View {
     }
 
     var body: some View {
-        GeometryReader { geo in
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    
-                    ImageCarousel(
-                        imageURLs: [
-                            postcard.frontImageURL,
-                            postcard.backImageURL
-                        ],
-                        containerWidth: geo.size.width - 2 * padding
-                    )
-                    //                .transaction { $0.animation = nil }
-                    
-                    
-                    StatusSection(status: postcard.status)
-                    
-                    Divider()
-                    
-                    BasicInfoSection(
-                        title: $editor.draft.title,
-                        description: $editor.draft.description,
-                        era: $editor.draft.era
-                    )
-                    
-                    Divider()
-                    
-                    TypeSection(
-                        material: $editor.draft.type.material,
-                        style: $editor.draft.type.style
-                    )
-                    
-                    Divider()
-                    
-                    PostalInfoSection(
-                        postmarkDate: $editor.draft.postmarkDate,
-                        mailingOrigin: $editor.draft.mailingOrigin
-                    )
-                    
-                    Divider()
-                    
-                    PublisherSection(
-                        publisher: $editor.draft.publisher,
-                        condition: $editor.draft.condition
-                    )
-                    
-                    Divider()
-                    
-                    KeywordsSection(
-                        keywords: $editor.draft.keywords
-                    )
-                    
-                    Divider()
-                    
-                    PricingSection(
-                        price: $editor.draft.suggestedPriceCAD.price,
-                        auctionStart: $editor.draft.suggestedPriceCAD.auctionStart
-                    )
-                    
-                    Divider()
-                    
-                    MetadataSection(
-                        scannedAt: postcard.scannedAt,
-                        batchID: postcard.batchID,
-                        ebayCategoryID: $editor.draft.ebayCategoryID
-                    )
-                    
-                    HStack {
-                        Button {
-                            let updated = editor.commitAndReset()
-                            
-                            Task {
-                                try await PostcardRepository.shared.updatePostcard(updated)
-                                onSave(updated)
-                            }
-                        } label: {
-                            Text("Save")
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .disabled(!editor.hasChanges)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                ImageCarousel(
+                    imageURLs: [
+                        postcard.frontImageURL,
+                        postcard.backImageURL
+                    ]
+                )
+                
+                StatusSection(status: postcard.status)
+                
+                Divider()
+                
+                BasicInfoSection(
+                    title: $editor.draft.title,
+                    description: $editor.draft.description,
+                    era: $editor.draft.era
+                )
+                
+                Divider()
+                
+                TypeSection(
+                    material: $editor.draft.type.material,
+                    style: $editor.draft.type.style
+                )
+                
+                Divider()
+                
+                PostalInfoSection(
+                    postmarkDate: $editor.draft.postmarkDate,
+                    mailingOrigin: $editor.draft.mailingOrigin
+                )
+                
+                Divider()
+                
+                PublisherSection(
+                    publisher: $editor.draft.publisher,
+                    condition: $editor.draft.condition
+                )
+                
+                Divider()
+                
+                KeywordsSection(
+                    keywords: $editor.draft.keywords
+                )
+                
+                Divider()
+                
+                PricingSection(
+                    price: $editor.draft.suggestedPriceCAD.price,
+                    auctionStart: $editor.draft.suggestedPriceCAD.auctionStart
+                )
+                
+                Divider()
+                
+                MetadataSection(
+                    scannedAt: postcard.scannedAt,
+                    batchID: postcard.batchID,
+                    ebayCategoryID: $editor.draft.ebayCategoryID
+                )
+                
+                HStack {
+                    Button {
+                        let updated = editor.commitAndReset()
                         
-                        //                    .confirmationDialog(
-                        //                        "Delete postcard?",
-                        //                        isPresented: $showDeleteConfirmation,
-                        //                        titleVisibility: .visible
-                        //                    ) {
-                        //                        Button("Delete", role: .destructive) {
-                        //                            Task {
-                        //                                do {
-                        //                                    try await PostcardRepository.shared.deletePostcard(postcard)
-                        //                                    onDelete()
-                        //                                } catch {
-                        //                                    assertionFailure("Failed to delete postcard: \(error)")
-                        //                                    deleteErrorMessage = "Failed to delete postcard. Please try again."
-                        //                                }
-                        //                            }
-                        //                        }
-                        //                        Button("Cancel", role: .cancel) {}
-                        //                    } message: { // todo: recently deleted
-                        //                        Text("""
-                        //                        This postcard will be deleted from your collection.
-                        //                        It will remain in Recently Deleted for 30 days.
-                        //                        """)
-                        //                    }
+                        Task {
+                            try await PostcardRepository.shared.updatePostcard(updated)
+                            onSave(updated)
+                        }
+                    } label: {
+                        Text("Save")
                     }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(!editor.hasChanges)
+                    
+                    //                    .confirmationDialog(
+                    //                        "Delete postcard?",
+                    //                        isPresented: $showDeleteConfirmation,
+                    //                        titleVisibility: .visible
+                    //                    ) {
+                    //                        Button("Delete", role: .destructive) {
+                    //                            Task {
+                    //                                do {
+                    //                                    try await PostcardRepository.shared.deletePostcard(postcard)
+                    //                                    onDelete()
+                    //                                } catch {
+                    //                                    assertionFailure("Failed to delete postcard: \(error)")
+                    //                                    deleteErrorMessage = "Failed to delete postcard. Please try again."
+                    //                                }
+                    //                            }
+                    //                        }
+                    //                        Button("Cancel", role: .cancel) {}
+                    //                    } message: { // todo: recently deleted
+                    //                        Text("""
+                    //                        This postcard will be deleted from your collection.
+                    //                        It will remain in Recently Deleted for 30 days.
+                    //                        """)
+                    //                    }
                 }
-                .padding(padding)
             }
-            .onChange(of: postcard.id) { _, _ in
-                editor.reset(with: postcard)
-            }
-            .alert("Error", isPresented: showDeleteErrorMessage) {
-                Button("OK", role: .cancel) { deleteErrorMessage = nil }
-            } message: {
-                Text(deleteErrorMessage ?? "")
-            }
+            .padding(padding)
         }
+        .onChange(of: postcard.id) { _, _ in
+            editor.reset(with: postcard)
+        }
+        .alert("Error", isPresented: showDeleteErrorMessage) {
+            Button("OK", role: .cancel) { deleteErrorMessage = nil }
+        } message: {
+            Text(deleteErrorMessage ?? "")
+        }
+        
     }
 }
 

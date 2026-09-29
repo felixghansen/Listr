@@ -42,25 +42,23 @@ struct PostcardImage: View {
 
 struct ImageCarousel: View {
     let imageURLs: [URL?]
-    let containerWidth: CGFloat
 
     private let aspectRatio: CGFloat = 3 / 2
     @State private var currentIndex = 0
 
     var body: some View {
         VStack(spacing: 12) {
-
             ScrollViewReader { geo in
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(spacing: 0) {
                         ForEach(Array(imageURLs.enumerated()), id: \.offset) { index, imageURL in
                             PostcardImage(url: imageURL, scaledTo: .fit)
-                                .frame(width: containerWidth)
-                                .aspectRatio(aspectRatio, contentMode: .fit)
+                                .containerRelativeFrame([.horizontal, .vertical])
                                 .id(index)
                         }
                     }
                 }
+                .aspectRatio(aspectRatio, contentMode: .fit)
                 .scrollDisabled(true)
                 .onChange(of: currentIndex) { _, newIndex in
                     withAnimation(.easeInOut(duration: 0.3)) {
