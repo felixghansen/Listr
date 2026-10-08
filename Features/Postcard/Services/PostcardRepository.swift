@@ -28,15 +28,17 @@ final class PostcardRepository: ObservableObject {
 
     // MARK: - Loading
 
-    func listen(to item: SidebarItem, sortedBy sortOrder: PostcardSortOrder) {
+    func listen(to filter: PostcardFilter, sortedBy sortOrder: PostcardSortOrder) {
         stopListening()
         postcards = []
         detailsCache = [:]
         lastDocument = nil
         hasMorePages = true
 
-        let query = makeQuery(for: item, sortedBy: sortOrder)
+        let query = makeQuery(for: filter, sortedBy: sortOrder)
         currentQuery = query
+        
+        // TODO: BUG: The listener only covers the first page (limit(to: 50)), while loadNextPage() appends later pages with one-off getDocuments() calls. So if you scroll to load page 2 and then edit any postcard on page 1, the listener fires and runs self.postcards = details.... That replaces the whole array with just the first 50, so page 2 vanishes and lastDocument jumps back to the end of page 1. Your own updatePostcard triggers this as well, since it writes to Firestore.
 
         listener = query.limit(to: pageSize).addSnapshotListener { [weak self] (snapshot: QuerySnapshot?, error: Error?) in
             guard let snapshot = snapshot else { return }
@@ -145,16 +147,15 @@ final class PostcardRepository: ObservableObject {
 
     // MARK: - Helpers
 
-    private func makeQuery(for item: SidebarItem, sortedBy sortOrder: PostcardSortOrder) -> Query {
+    private func makeQuery(for filter: PostcardFilter, sortedBy sortOrder: PostcardSortOrder) -> Query {
         var query: Query = postcardsCollection
 
-        switch item {
-        case .all:
-            break
-        case .status(let status):
+        if let status = filter.status {
             query = query.whereField("status", isEqualTo: status.rawValue)
-        case .batch(let id):
-            query = query.whereField("batchID", isEqualTo: id)
+        }
+        
+        if let batchID = filter.batchID {
+            query = query.whereField("batchID", isEqualTo: batchID)
         }
 
         let sortField: String

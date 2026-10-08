@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+// TODO: Might simplify this, only being used to display postcard analysis progress
 enum PopupStyle: Equatable {
     case info
     case success

@@ -9,39 +9,28 @@ import Foundation
 import SwiftUI
 import FirebaseAuth
 
-enum SidebarItem: Hashable {
-    case all
-    case status(PostcardStatus)
-    case batch(id: String)
-}
-
 struct Sidebar: View {
-    @Binding var selection: SidebarItem?
+    @Binding var batchID: String?
     let batches: [PostcardBatch]
     @ObservedObject var auth: AuthService
-
+    
+    private enum Selection: Hashable {
+        case all
+        case batch(String)
+    }
+    
+    @State private var selection: Selection = .all
+    
     var body: some View {
         List(selection: $selection) {
-            Section("Library") {
-                Label("All Postcards", systemImage: "photo.stack")
-                    .tag(SidebarItem.all)
-
-                ForEach(PostcardStatus.allCases, id: \.self) { status in
-                    Label {
-                        Text(status.rawValue.capitalized)
-                    } icon: {
-                        Image(systemName: "circle.fill")
-                            .foregroundStyle(status.color)
-                    }
-                    .tag(SidebarItem.status(status))
-                }
-            }
-
             Section("Batches") {
+                Label("All Batches", systemImage: "tray.fill")
+                    .tag(Selection.all)
+                
                 ForEach(batches.prefix(10), id: \.id) { batch in
                     if let id = batch.id {
                         Label(batch.scannedAt.formatted(date: .abbreviated, time: .omitted), systemImage: "tray")
-                            .tag(SidebarItem.batch(id: id))
+                            .tag(Selection.batch(id))
                     }
                 }
             }
@@ -56,6 +45,14 @@ struct Sidebar: View {
                     .padding(.horizontal, 16)
             }
             .background(.ultraThinMaterial)
+        }
+        .onChange(of: selection) {
+            switch selection {
+            case .all:
+                batchID = nil
+            case .batch(let id):
+                batchID = id
+            }
         }
     }
 }

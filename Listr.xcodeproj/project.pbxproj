@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		DC3A6C71306B5F7F00296A0A /* FirebaseAppCheck in Frameworks */ = {isa = PBXBuildFile; productRef = DC3A6C70306B5F7F00296A0A /* FirebaseAppCheck */; };
 		DC92659D2EB3243200EDB10A /* Flow in Frameworks */ = {isa = PBXBuildFile; productRef = DC92659C2EB3243200EDB10A /* Flow */; };
 		DCCF76D52F5A5140009AF03F /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = DCCF76D42F5A513B009AF03F /* .gitignore */; };
 		DCDE6B672EA0765D009B580F /* FirebaseAI in Frameworks */ = {isa = PBXBuildFile; productRef = DCDE6B662EA0765D009B580F /* FirebaseAI */; };
@@ -78,6 +79,7 @@
 				DCDE6B6D2EA0765D009B580F /* FirebaseFirestore in Frameworks */,
 				DC92659D2EB3243200EDB10A /* Flow in Frameworks */,
 				DCDE6B6B2EA0765D009B580F /* FirebaseAuth in Frameworks */,
+				DC3A6C71306B5F7F00296A0A /* FirebaseAppCheck in Frameworks */,
 				DCDE6B6F2EA0765D009B580F /* FirebaseStorage in Frameworks */,
 				DCDE6B672EA0765D009B580F /* FirebaseAI in Frameworks */,
 			);
@@ -113,7 +115,15 @@
 				DCDE6B832EA55893009B580F /* Listr.app */,
 				DCDE6B842EA55893009B580F /* ListrTests.xctest */,
 				DCDE6B852EA55893009B580F /* ListrUITests.xctest */,
+				DC3A6C6F306B5F7F00296A0A /* Frameworks */,
 			);
+			sourceTree = "<group>";
+		};
+		DC3A6C6F306B5F7F00296A0A /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -146,6 +156,7 @@
 				DCDE6B6C2EA0765D009B580F /* FirebaseFirestore */,
 				DCDE6B6E2EA0765D009B580F /* FirebaseStorage */,
 				DC92659C2EB3243200EDB10A /* Flow */,
+				DC3A6C70306B5F7F00296A0A /* FirebaseAppCheck */,
 			);
 			productName = Listr;
 			productReference = DCDE6B832EA55893009B580F /* Listr.app */;
@@ -645,6 +656,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		DC3A6C70306B5F7F00296A0A /* FirebaseAppCheck */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DCDE6B652EA0765D009B580F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAppCheck;
+		};
 		DC92659C2EB3243200EDB10A /* Flow */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = DC92659B2EB3243200EDB10A /* XCRemoteSwiftPackageReference "SwiftUI-Flow" */;

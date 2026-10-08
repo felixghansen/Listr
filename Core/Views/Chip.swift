@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 
+// Used to display postcard tags on EditorContent panel
 struct Chip: View {
     let text: String
     let style: HierarchicalShapeStyle

@@ -35,6 +35,37 @@ enum CollectionToolbar {
             .help(showInspector.wrappedValue ? "Hide Inspector" : "Show Inspector")
         }
     }
+    
+    @ToolbarContentBuilder
+    static func filterButton(status: Binding<PostcardStatus?>) -> some ToolbarContent {
+        ToolbarItem {
+            Menu {
+                Picker("Filter", selection: status) {
+                    Label("All Postcards", systemImage: "square.grid.3x3.fill")
+                        .tag(PostcardStatus?.none)
+
+                    Divider()
+
+                    ForEach(PostcardStatus.allCases, id: \.self) { option in
+                        Label {
+                            Text(option.rawValue.capitalized)
+                        } icon: {
+                            option.menuIcon
+                        }
+                        .tag(Optional(option))
+                    }
+                }
+                .pickerStyle(.inline)
+                .labelsHidden()
+            } label: {
+                Label("Filter", systemImage: status.wrappedValue == nil ?
+                      "line.3.horizontal.decrease" :
+                        "line.3.horizontal.decrease.circle.fill"
+                )
+            }
+            .help("Filter Postcards")
+        }
+    }
 
     @ToolbarContentBuilder
     static func sortButton(sortOrder: Binding<PostcardSortOrder>) -> some ToolbarContent {

@@ -79,6 +79,13 @@ extension PostcardDetails {
     }
 }
 
+struct PostcardFilter: Hashable {
+    var status: PostcardStatus?
+    var batchID: String?
+    
+    static let all = PostcardFilter(status: nil, batchID: nil)
+}
+
 enum PostcardStatus: String, Codable, CaseIterable {
     case needsReview = "needs review"
     case readyToList = "ready to list"
@@ -98,6 +105,18 @@ extension PostcardStatus {
         case .sold:
             return .green
         }
+    }
+}
+
+extension PostcardStatus {
+    var menuIcon: Image {
+        let config = NSImage.SymbolConfiguration(paletteColors: [NSColor(color)])
+        guard let image = NSImage(systemSymbolName: "circle.fill", accessibilityDescription: nil)?
+            .withSymbolConfiguration(config) else {
+            return Image(systemName: "circle.fill")
+        }
+        image.isTemplate = false
+        return Image(nsImage: image)
     }
 }
 

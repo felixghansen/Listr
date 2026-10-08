@@ -6,7 +6,7 @@ struct ContentView: View {
     @ObservedObject private var auth = AuthService.shared
     @StateObject private var controller = PostcardAnalysisController()
 
-    @State private var sidebarSelection: SidebarItem? = .all
+    @State private var filter: PostcardFilter = .all
     @State private var sortOrder = PostcardSortOrder()
     @State private var searchText = ""
     @State private var selectedPostcards: [PostcardDetails] = []
@@ -14,7 +14,7 @@ struct ContentView: View {
 
     var body: some View {
         NavigationSplitView {
-            Sidebar(selection: $sidebarSelection, batches: batchRepo.batches, auth: auth)
+            Sidebar(batchID: $filter.batchID, batches: batchRepo.batches, auth: auth)
                 .navigationSplitViewColumnWidth(200)
         } detail: {
             PostcardCollection(postcards: visiblePostcards, selectedPostcards: $selectedPostcards)
@@ -27,6 +27,7 @@ struct ContentView: View {
                             controller.openFolderPicker()
                         }
                     }
+                    CollectionToolbar.filterButton(status: $filter.status)
                     CollectionToolbar.sortButton(sortOrder: $sortOrder)
                     CollectionToolbar.inspectorButton(showInspector: $showInspector)
                 }
@@ -41,7 +42,7 @@ struct ContentView: View {
             batchRepo.startListening()
             loadPostcards()
         }
-        .onChange(of: sidebarSelection) {
+        .onChange(of: filter) {
             selectedPostcards = []
             loadPostcards()
         }
@@ -51,18 +52,16 @@ struct ContentView: View {
     }
 
     private func loadPostcards() {
-        postcardRepo.listen(to: sidebarSelection ?? .all, sortedBy: sortOrder)
+        postcardRepo.listen(to: filter, sortedBy: sortOrder)
     }
 
     private var title: String {
-        switch sidebarSelection ?? .all {
-        case .all:
-            return "All Postcards"
-        case .status(let status):
-            return status.rawValue.capitalized
-        case .batch:
-            return "Batch"
+        let statusTitle = filter.status?.rawValue.capitalized ?? "All"
+        guard let id = filter.batchID, let batch = batchRepo.batches.first(where: { $0.id == id }) else {
+            return statusTitle
         }
+        
+        return "\(statusTitle) · \(batch.scannedAt.formatted(date: .abbreviated, time: .omitted))"
     }
 
     private var visiblePostcards: [PostcardSummary] {
