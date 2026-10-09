@@ -73,7 +73,7 @@ final class PostcardRepository: ObservableObject {
 
         let snapshot = try await query.getDocuments()
         let details = snapshot.documents.compactMap { try? $0.data(as: PostcardDetails.self) }
-        let newPostcards = details.map(PostcardSummary.init(from:))
+        let newPostcards = details.map { PostcardSummary(from: $0) }
 
         cache(details)
         postcards.append(contentsOf: newPostcards)

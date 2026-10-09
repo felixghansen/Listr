@@ -7,9 +7,11 @@ struct PostcardGallery: View {
     let onSelect: (PostcardSummary) -> Void
     let clearSelection: () -> Void
     
+    private let postcardRepo = PostcardRepository.shared
+    
     @State private var cardWidth: CGFloat = 175
-
     private let gap: CGFloat = 20
+    
     private var visibleSelectedCount: Int {
         postcards.filter { isSelected($0) }.count
     }
@@ -28,6 +30,13 @@ struct PostcardGallery: View {
                             isSelected: isSelected(postcard)
                         )
                         .onTapGesture { onSelect(postcard) }
+                        .onAppear {
+                            Task {
+                                if postcard.id == postcards.last?.id {
+                                    try await postcardRepo.loadNextPage()
+                                }
+                            }
+                        }
                     }
                 }
                 .padding()
