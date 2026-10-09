@@ -49,9 +49,6 @@ struct PostcardAnalyzer {
                 let res = try await model.generateContent(prompt)
                 responseText = res.text
         }
-
-        let elapsed = Date().timeIntervalSince(start)
-        print("Time to generate: \(elapsed) seconds")
         
         guard let responseText = responseText else {
             throw PostcardAnalysisError.noTextGenerated
