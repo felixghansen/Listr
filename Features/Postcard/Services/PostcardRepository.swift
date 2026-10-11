@@ -38,8 +38,6 @@ final class PostcardRepository: ObservableObject {
         let query = makeQuery(for: filter, sortedBy: sortOrder)
         currentQuery = query
         
-        // TODO: BUG: The listener only covers the first page (limit(to: 50)), while loadNextPage() appends later pages with one-off getDocuments() calls. So if you scroll to load page 2 and then edit any postcard on page 1, the listener fires and runs self.postcards = details.... That replaces the whole array with just the first 50, so page 2 vanishes and lastDocument jumps back to the end of page 1. Your own updatePostcard triggers this as well, since it writes to Firestore.
-
         listener = query.limit(to: pageSize).addSnapshotListener { [weak self] (snapshot: QuerySnapshot?, error: Error?) in
             guard let snapshot = snapshot else { return }
             let details = snapshot.documents.compactMap { try? $0.data(as: PostcardDetails.self) }

@@ -1,5 +1,7 @@
 import SwiftUI
 
+// TODO: Charge users for postcard credits, 2.99 for 100 postcard scans, 4.99 for 200, etc... prices can be adjusted later. Give them 50 scans for free when signing up, hopefully they can't bypass it by creating multiple accounts. Maybe check if ebay account is already linked to another account? What if they forget their login... $0.34 for 100 postcard cost. So 1 postcard = 1/3rd of a cent
+
 struct ContentView: View {
     @ObservedObject private var postcardRepo = PostcardRepository.shared
     @ObservedObject private var batchRepo = BatchRepository.shared

@@ -125,3 +125,17 @@ struct Popup: View {
         .frame(maxWidth: 500)
     }
 }
+
+
+#Preview {
+    
+    Popup(
+        style: .progress(analysisProgress),
+        title: "Analyzing…",
+        message: "Analyzed \(controller.imagesAnalyzed)/\(controller.totalImages) images",
+        secondaryActionTitle: "Cancel",
+        secondaryAction: { controller.cancelAnalysis() }
+    )
+    .frame(maxWidth: 500)
+    .transition(.opacity.combined(with: .scale(scale: 0.98)))
+}
