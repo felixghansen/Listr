@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import QuickLook
 
 enum ImageScale {
     case fit, fill
@@ -45,6 +46,9 @@ struct ImageCarousel: View {
 
     private let aspectRatio: CGFloat = 3 / 2
     @State private var currentIndex = 0
+    
+    @State private var isDownloadingForQL: Bool = false
+    @State private var localFileURL: URL? = nil
 
     var body: some View {
         VStack(spacing: 12) {
@@ -53,6 +57,10 @@ struct ImageCarousel: View {
                     LazyHStack(spacing: 0) {
                         ForEach(Array(imageURLs.enumerated()), id: \.offset) { index, imageURL in
                             PostcardImage(url: imageURL, scaledTo: .fit)
+                                .onTapGesture {
+                                    triggerQuickLook()
+                                }
+                                .help("Click to enlarge")
                                 .containerRelativeFrame([.horizontal, .vertical])
                                 .id(index)
                         }
@@ -66,7 +74,7 @@ struct ImageCarousel: View {
                     }
                 }
             }
-
+            
             HStack(spacing: 16) {
                 Button {
                     currentIndex = max(currentIndex - 1, 0)
@@ -90,6 +98,28 @@ struct ImageCarousel: View {
         }
         .onChange(of: imageURLs.map { $0?.absoluteString }) { _, _ in
             currentIndex = 0
+        }
+        .quickLookPreview($localFileURL)
+    }
+    
+    private func triggerQuickLook() {
+        guard let remoteURL = imageURLs[currentIndex], !isDownloadingForQL else { return }
+        isDownloadingForQL = true
+        
+        Task {
+            do {
+                let localURL = try await QuickLookService.prepareLocalURL(from: remoteURL)
+                
+                await MainActor.run {
+                    self.localFileURL = localURL
+                    self.isDownloadingForQL = false
+                }
+            } catch {
+                print("Failed to stage image for Quick Look: \(error)")
+                await MainActor.run {
+                    self.isDownloadingForQL = false
+                }
+            }
         }
     }
 }
