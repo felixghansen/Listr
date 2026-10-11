@@ -74,15 +74,12 @@ struct ContentView: View {
     @ViewBuilder
     private var analysisOverlay: some View {
         if controller.isAnalyzing {
-            Popup(
-                style: .progress(analysisProgress),
-                title: "Analyzing…",
-                message: "Analyzed \(controller.imagesAnalyzed)/\(controller.totalImages) images",
-                secondaryActionTitle: "Cancel",
-                secondaryAction: { controller.cancelAnalysis() }
+            AnalysisProgressPopup(
+                analyzed: controller.imagesAnalyzed,
+                total: controller.totalImages,
+                onCancel: { controller.cancelAnalysis() }
             )
-            .frame(maxWidth: 500)
-            .transition(.opacity.combined(with: .scale(scale: 0.98)))
+            .transition(.opacity)
         }
 
         if let errorMessage = controller.errorMessage {
