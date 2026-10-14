@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PostcardInspector: View {
     @Binding var selectedPostcards: [PostcardDetails]
+    var onListEbay: () -> Void
     
     var body: some View {
         Group {
@@ -12,7 +13,8 @@ struct PostcardInspector: View {
                         if let idx = selectedPostcards.firstIndex(where: { $0.id == updated.id }) {
                             selectedPostcards[idx] = updated
                         }
-                    }
+                    },
+                    onListEbay: onListEbay
                 )
                 .id(selected.id)
             } else {

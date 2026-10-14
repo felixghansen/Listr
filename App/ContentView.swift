@@ -13,6 +13,7 @@ struct ContentView: View {
     @State private var searchText = ""
     @State private var selectedPostcards: [PostcardDetails] = []
     @State private var showInspector = true
+    @State private var showEbaySheet = false
 
     var body: some View {
         NavigationSplitView {
@@ -24,6 +25,16 @@ struct ContentView: View {
                 .navigationTitle(title)
                 .searchable(text: $searchText, placement: .sidebar, prompt: "Search")
                 .toolbar {
+                    ToolbarItem {
+                        Button {
+                            showEbaySheet.toggle()
+                        } label: {
+                            Label("List on eBay", systemImage: "tag")
+                        }
+                        .disabled(!selectedPostcards.contains { $0.status == .readyToList })
+                        .help("List selected Ready to List postcards on eBay")
+                    }
+                    
                     CollectionToolbar.importButton {
                         if auth.user != nil {
                             controller.openFolderPicker()
@@ -34,11 +45,16 @@ struct ContentView: View {
                     CollectionToolbar.inspectorButton(showInspector: $showInspector)
                 }
                 .inspector(isPresented: $showInspector) {
-                    PostcardInspector(selectedPostcards: $selectedPostcards)
+                    PostcardInspector(selectedPostcards: $selectedPostcards, onListEbay: {
+                        showEbaySheet = true
+                    })
                         .inspectorColumnWidth(350)
                 }
         }
         .overlay { analysisOverlay }
+        .sheet(isPresented: $showEbaySheet) {
+            PublishToEbaySheet(postcards: selectedPostcards)
+        }
         .animation(.snappy, value: controller.isAnalyzing)
         .onAppear {
             batchRepo.startListening()

@@ -11,6 +11,8 @@ import Flow
 struct EditorContent: View {
     let postcard: PostcardDetails
     let onSave: (PostcardDetails) -> Void
+    let onListEbay: () -> Void
+    
     private let padding: CGFloat = 16
 
     @StateObject private var editor: PostcardEditor
@@ -25,10 +27,12 @@ struct EditorContent: View {
 
     init(
         postcard: PostcardDetails,
-        onSave: @escaping (PostcardDetails) -> Void
+        onSave: @escaping (PostcardDetails) -> Void,
+        onListEbay: @escaping () -> Void
     ) {
         self.postcard = postcard
         self.onSave = onSave
+        self.onListEbay = onListEbay
         _editor = StateObject(wrappedValue: PostcardEditor(postcard: postcard))
     }
 
@@ -107,6 +111,11 @@ struct EditorContent: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .disabled(!editor.hasChanges)
+                    
+                    Button("List on eBay") {
+                        onListEbay()
+                    }
+                    .disabled(postcard.status != .readyToList || editor.hasChanges)
                     
                     //                    .confirmationDialog(
                     //                        "Delete postcard?",
