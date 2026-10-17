@@ -237,15 +237,18 @@ struct EbayClient {
         
         let (data, response) = try await URLSession.shared.data(for: request)
         
-        if let httpResponse = response as? HTTPURLResponse {
-            let code = httpResponse.statusCode
-            guard (200..<300).contains(code) else {
-                if let ebayError = try? JSONDecoder().decode(EbayError.self, from: data) {
-                    throw ebayError
-                }
-                throw URLError(.badServerResponse)
-            }
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
         }
+        
+        let code = httpResponse.statusCode
+        guard (200..<300).contains(code) else {
+            if let ebayError = try? JSONDecoder().decode(EbayError.self, from: data) {
+                throw ebayError
+            }
+            throw URLError(.badServerResponse)
+        }
+        
         
         return data
     }
