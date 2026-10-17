@@ -79,6 +79,7 @@ struct PostcardAnalyzer {
         return cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
     }
     
+    // TODO: Make prompt return more accurate results. Concise details. Avoid fluff in description. Try to find a solution to pricing. It will almost always be inaccurate. If we remove it, then every postcard wont be ready to list... 
     private var prompt: String {
         """
         Act as a professional vintage postcard dealer and expert eBay listing creator specializing in collectible postcards.
@@ -174,7 +175,7 @@ struct PostcardAnalyzer {
         Postmark city/state or city/country or Unposted.
 
         10. ebayCategoryID
-        Exact numerical ID for postcard type, e.g., 173575 for Collectibles > Postcards > Topographical > United States > New York. Use 0 if unknown.
+        Use 262042 (Topographical) if the card mainly shows a real, identifiable place, and 262043 (Non-Topographical) for everything else. For cards with crossover appeal, pick the category whose collectors would be more interested in this specific card.
 
         11. PRICING LOGIC (CAD)
         "suggestedPriceCAD": { "price": 0.00, "auctionStart": 0.00 }
