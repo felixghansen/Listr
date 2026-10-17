@@ -12,27 +12,43 @@ struct EditorContent: View {
     let postcard: PostcardDetails
     let onSave: (PostcardDetails) -> Void
     let onListEbay: () -> Void
+    let onUpdateEbay: () -> Void
+
+    @Environment(\.openURL) private var openURL
     
     private let padding: CGFloat = 16
 
     @StateObject private var editor: PostcardEditor
     @State private var showDeleteConfirmation = false
     @State private var deleteErrorMessage: String? = nil
+    
     private var showDeleteErrorMessage: Binding<Bool> {
         Binding<Bool>(
             get: { deleteErrorMessage != nil },
             set: { newValue in if !newValue { deleteErrorMessage = nil } }
         )
     }
+    
+    @ViewBuilder
+    private var viewOnEbayButton: some View {
+        if let listingId = postcard.ebayListingId,
+           let url = URL(string: "https://sandbox.ebay.com/itm/\(listingId)") {
+            Button("View on eBay") {
+                openURL(url)
+            }
+        }
+    }
 
     init(
         postcard: PostcardDetails,
         onSave: @escaping (PostcardDetails) -> Void,
-        onListEbay: @escaping () -> Void
+        onListEbay: @escaping () -> Void,
+        onUpdateEbay: @escaping () -> Void
     ) {
         self.postcard = postcard
         self.onSave = onSave
         self.onListEbay = onListEbay
+        self.onUpdateEbay = onUpdateEbay
         _editor = StateObject(wrappedValue: PostcardEditor(postcard: postcard))
     }
 
@@ -46,7 +62,10 @@ struct EditorContent: View {
                     ]
                 )
                 
-                StatusSection(status: postcard.status)
+                OverviewSection(
+                    status: postcard.status,
+                    scannedAt: postcard.scannedAt
+                )
                 
                 Divider()
                 
@@ -85,61 +104,47 @@ struct EditorContent: View {
                 
                 Divider()
                 
-                PricingSection(
-                    price: $editor.draft.suggestedPriceCAD.price,
-                    auctionStart: $editor.draft.suggestedPriceCAD.auctionStart
-                )
-                
-                Divider()
-                
-                MetadataSection(
-                    scannedAt: postcard.scannedAt,
-                    batchID: postcard.batchID,
-                    ebayCategoryID: $editor.draft.ebayCategoryID
-                )
-                
+                ListingSection(
+                     ebayCategoryID: $editor.draft.ebayCategoryID,
+                     price: $editor.draft.suggestedPrice.price,
+                     auctionStart: $editor.draft.suggestedPrice.auctionStart
+                 )
+
                 HStack {
-                    Button {
-                        let updated = editor.commitAndReset()
-                        
-                        Task {
-                            try await PostcardRepository.shared.updatePostcard(updated)
-                            onSave(updated)
+                    if postcard.status != .sold {
+                        Button("Save") {
+                            let updated = editor.commitAndReset()
+
+                            Task {
+                                try await PostcardRepository.shared.updatePostcard(updated)
+                                onSave(updated)
+                            }
                         }
-                    } label: {
-                        Text("Save")
+                        .buttonStyle(.borderedProminent)
+                        .disabled(!editor.hasChanges)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(!editor.hasChanges)
-                    
-                    Button("List on eBay") {
-                        onListEbay()
+
+                    switch postcard.status {
+                    case .needsReview:
+                        EmptyView()
+
+                    case .readyToList:
+                        Button("List on eBay") {
+                            onListEbay()
+                        }
+                        .disabled(editor.hasChanges)
+
+                    case .listed:
+                        Button("Update on eBay") {
+                            onUpdateEbay()
+                        }
+                        .disabled(editor.hasChanges)
+
+                        viewOnEbayButton
+
+                    case .sold:
+                        viewOnEbayButton
                     }
-                    .disabled(postcard.status != .readyToList || editor.hasChanges)
-                    
-                    //                    .confirmationDialog(
-                    //                        "Delete postcard?",
-                    //                        isPresented: $showDeleteConfirmation,
-                    //                        titleVisibility: .visible
-                    //                    ) {
-                    //                        Button("Delete", role: .destructive) {
-                    //                            Task {
-                    //                                do {
-                    //                                    try await PostcardRepository.shared.deletePostcard(postcard)
-                    //                                    onDelete()
-                    //                                } catch {
-                    //                                    assertionFailure("Failed to delete postcard: \(error)")
-                    //                                    deleteErrorMessage = "Failed to delete postcard. Please try again."
-                    //                                }
-                    //                            }
-                    //                        }
-                    //                        Button("Cancel", role: .cancel) {}
-                    //                    } message: { // todo: recently deleted
-                    //                        Text("""
-                    //                        This postcard will be deleted from your collection.
-                    //                        It will remain in Recently Deleted for 30 days.
-                    //                        """)
-                    //                    }
                 }
             }
             .padding(padding)
@@ -156,12 +161,13 @@ struct EditorContent: View {
     }
 }
 
-struct StatusSection: View {
+struct OverviewSection: View {
     let status: PostcardStatus
+    let scannedAt: Date
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Status")
+            Text("Overview")
                 .font(.headline)
                 .foregroundStyle(.primary)
             
@@ -173,6 +179,10 @@ struct StatusSection: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
+            
+            Text("Scanned \(scannedAt.formatted(date: .abbreviated, time: .omitted))")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
         }
     }
 }
@@ -210,11 +220,14 @@ struct BasicInfoSection: View {
                 Text("Era")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                TextField("", text: $era)
-                    .textFieldStyle(.plain)
-                    .padding(8)
-                    .background(.tertiary)
-                    .cornerRadius(6)
+                Picker("Era", selection: $era) {
+                    ForEach(EbayAspectValues.era, id: \.self) { value in
+                        Text(value).tag(value)
+                    }
+                }
+                .pickerStyle(.menu)
+                .labelsHidden()
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
     }
@@ -234,22 +247,28 @@ struct TypeSection: View {
                 Text("Material")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                TextField("", text: $material)
-                    .textFieldStyle(.plain)
-                    .padding(8)
-                    .background(.tertiary)
-                    .cornerRadius(6)
+                Picker("Material", selection: $material) {
+                    ForEach(EbayAspectValues.material, id: \.self) { value in
+                        Text(value).tag(value)
+                    }
+                }
+                .pickerStyle(.menu)
+                .labelsHidden()
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
             
             VStack(alignment: .leading, spacing: 4) {
                 Text("Style")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                TextField("", text: $style)
-                    .textFieldStyle(.plain)
-                    .padding(8)
-                    .background(.tertiary)
-                    .cornerRadius(6)
+                Picker("Style", selection: $style) {
+                    ForEach(EbayAspectValues.style, id: \.self) { value in
+                        Text(value).tag(value)
+                    }
+                }
+                .pickerStyle(.menu)
+                .labelsHidden()
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
     }
@@ -427,19 +446,38 @@ struct KeywordDropDelegate: DropDelegate {
     }
 }
 
-struct PricingSection: View {
+enum EbayPostcardCategory {
+    static let topographical = 262042
+    static let nonTopographical = 262043
+}
+
+struct ListingSection: View {
+    @Binding var ebayCategoryID: Int
     @Binding var price: Double
     @Binding var auctionStart: Double
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Pricing (CAD)")
+            Text("eBay Listing")
                 .font(.headline)
                 .foregroundStyle(.primary)
-            
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Category")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Picker("Category", selection: $ebayCategoryID) {
+                    Text("Topographical").tag(EbayPostcardCategory.topographical)
+                    Text("Non-Topographical").tag(EbayPostcardCategory.nonTopographical)
+                }
+                .pickerStyle(.menu)
+                .labelsHidden()
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Buy It Now")
+                    Text("Price (USD)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     HStack {
@@ -452,9 +490,9 @@ struct PricingSection: View {
                     .background(.tertiary)
                     .cornerRadius(6)
                 }
-                
+
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Auction Start")
+                    Text("Auction Start (USD)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     HStack {
@@ -469,58 +507,11 @@ struct PricingSection: View {
                 }
             }
         }
-    }
-}
-
-struct MetadataSection: View {
-    let scannedAt: Date
-    let batchID: String
-    @Binding var ebayCategoryID: Int
-    @State var ebayCategoryIDText: String = ""
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Metadata")
-                .font(.headline)
-                .foregroundStyle(.primary)
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Scanned")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(scannedAt, style: .date)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Batch ID")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(batchID)
-                    .font(.system(.subheadline, design: .monospaced))
-                    .foregroundStyle(.secondary)
-            }
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text("eBay Category ID")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                TextField("", text: $ebayCategoryIDText)
-                    .textFieldStyle(.plain)
-                    .padding(8)
-                    .background(.tertiary)
-                    .cornerRadius(6)
-                    .onChange(of: ebayCategoryIDText){ _, newValue in
-                        let digits = newValue.filter { $0.isNumber }
-                        if digits != newValue { ebayCategoryIDText = digits }
-                        ebayCategoryID = Int(digits) ?? 0
-                    }
-                    .onAppear {
-                        ebayCategoryIDText = String(ebayCategoryID)
-                    }
+        .onAppear {
+            // Older postcards may have an AI-guessed ID that isn't one of the two valid categories.
+            if ebayCategoryID != EbayPostcardCategory.topographical && ebayCategoryID != EbayPostcardCategory.nonTopographical {
+                ebayCategoryID = EbayPostcardCategory.topographical
             }
         }
     }
 }
-

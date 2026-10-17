@@ -7,6 +7,10 @@ struct ContentView: View {
     @ObservedObject private var batchRepo = BatchRepository.shared
     @ObservedObject private var auth = AuthService.shared
     @StateObject private var controller = PostcardAnalysisController()
+    private let client = EbayClient(
+        baseURL: "https://api.sandbox.ebay.com",
+        token: ProcessInfo.processInfo.environment["EBAY_SANDBOX_TOKEN"] ?? ""
+    )
 
     @State private var filter: PostcardFilter = .all
     @State private var sortOrder = PostcardSortOrder()
@@ -45,15 +49,19 @@ struct ContentView: View {
                     CollectionToolbar.inspectorButton(showInspector: $showInspector)
                 }
                 .inspector(isPresented: $showInspector) {
-                    PostcardInspector(selectedPostcards: $selectedPostcards, onListEbay: {
-                        showEbaySheet = true
-                    })
-                        .inspectorColumnWidth(350)
+                    PostcardInspector(
+                        selectedPostcards: $selectedPostcards,
+                        onListEbay: onListEbay,
+                        onUpdateEbay: onUpdateEbay
+                    )
+                        .inspectorColumnWidth(min: 300, ideal: 400, max: 500)
                 }
         }
         .overlay { analysisOverlay }
         .sheet(isPresented: $showEbaySheet) {
-            PublishToEbaySheet(postcards: selectedPostcards)
+            PublishToEbaySheet(postcards: selectedPostcards) { postcard in
+                try await listPostcard(postcard)
+            }
         }
         .animation(.snappy, value: controller.isAnalyzing)
         .onAppear {
@@ -66,6 +74,39 @@ struct ContentView: View {
         }
         .onChange(of: sortOrder) {
             loadPostcards()
+        }
+    }
+    
+    private func onUpdateEbay() {
+        guard let postcard = selectedPostcards.first else { return }
+        
+        Task {
+            do {
+                try await client.updateListing(postcard)
+            } catch {
+                print(error)
+            }
+        }
+    }
+    
+    private func listPostcard(_ postcard: PostcardDetails) async throws {
+        let listingId = try await client.createListing(postcard)
+        
+        var updatedPostcard = postcard
+        updatedPostcard.markListed(listingId: listingId)
+        
+        try await postcardRepo.updatePostcard(updatedPostcard)
+    }
+    
+    private func onListEbay() {
+        guard let postcard = selectedPostcards.first else { return }
+        
+        Task {
+            do {
+                try await listPostcard(postcard)
+            } catch {
+                print(error)
+            }
         }
     }
 

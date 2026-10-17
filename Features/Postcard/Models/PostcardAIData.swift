@@ -18,14 +18,21 @@ struct PostcardAIData: Codable, Equatable {
     var postmarkDate: String
     var mailingOrigin: String
     var ebayCategoryID: Int
-    var suggestedPriceCAD: SuggestedPriceCAD
+    var suggestedPrice: SuggestedPrice
+    var confidence: Confidence
+    
+    enum Confidence: String, Codable, CaseIterable {
+        case high
+        case medium
+        case low
+    }
 
     struct PostcardType: Codable, Equatable {
         var material: String
         var style: String
     }
 
-    struct SuggestedPriceCAD: Codable, Equatable {
+    struct SuggestedPrice: Codable, Equatable {
         var price: Double
         var auctionStart: Double
     }

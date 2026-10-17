@@ -7,9 +7,15 @@
 
 import SwiftUI
 
+enum ListingState: Equatable {
+    case listing
+    case listed
+    case failed(String)
+}
+
 struct PublishToEbaySheet: View {
     let postcards: [PostcardDetails]
-    var onPublish: ([PostcardDetails]) -> Void = { _ in }
+    var listPostcard: (PostcardDetails) async throws -> Void
 
     @Environment(\.dismiss) private var dismiss
 
@@ -20,6 +26,9 @@ struct PublishToEbaySheet: View {
     private var skipped: [PostcardDetails] {
         postcards.filter { $0.status != .readyToList }
     }
+    
+    @State private var isPublishing = false
+    @State private var listingStates: [String: ListingState] = [:]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -41,13 +50,39 @@ struct PublishToEbaySheet: View {
                                         .frame(width: 48)
                                         .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
 
-                                    Text(postcard.aiData.title)
-                                        .font(.callout)
-                                        .lineLimit(2)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(postcard.aiData.title)
+                                            .lineLimit(2)
+                                        if case .failed(let message) = listingStates[postcard.id ?? ""] {
+                                            Text(message)
+                                                .font(.caption)
+                                                .foregroundStyle(.red)
+                                                .lineLimit(3)
+                                                .textSelection(.enabled)
+                                        }
+                                    }
 
-                                    Text(postcard.aiData.suggestedPriceCAD.price, format: .currency(code: "CAD"))
+                                    Text(postcard.aiData.suggestedPrice.price, format: .currency(code: "USD"))
                                         .font(.callout.monospacedDigit())
+                                    
+                                    HStack(spacing: 10) {
+                                        Group {
+                                            switch listingStates[postcard.id ?? ""] {
+                                            case .listing:
+                                                ProgressView()
+                                                    .controlSize(.small)
+                                            case .listed:
+                                                Image(systemName: "checkmark.circle.fill")
+                                                    .foregroundStyle(.green)
+                                            case .failed:
+                                                Image(systemName: "exclamationmark.triangle.fill")
+                                                    .foregroundStyle(.orange)
+                                            case nil:
+                                                Color.clear
+                                            }
+                                        }
+                                        .frame(width: 18)
+                                    }
                                 }
                                 .padding(.vertical, 6)
                             }
@@ -99,11 +134,33 @@ struct PublishToEbaySheet: View {
                 }
                 .keyboardShortcut(.cancelAction)
 
-                Button("Publish \(ready.count)") {
-                    onPublish(ready)
+                Button(ready.count == 1 ? "List 1 Postcard" : "List \(ready.count) Postcards") {
+                    isPublishing = true
+                    
+                    Task {
+                        for postcard in ready {
+                            guard let id = postcard.id else { continue }
+                            listingStates[id] = .listing
+                            
+                            do {
+                                try await listPostcard(postcard)
+                                listingStates[id] = .listed
+                            } catch {
+                                listingStates[id] = .failed(error.localizedDescription)
+                                print(error)
+                            }
+                        }
+                        
+                        isPublishing = false
+                        
+                        let allSucceeded = listingStates.values.allSatisfy { $0 == .listed }
+                        if allSucceeded {
+                            dismiss()
+                        }
+                    }
                 }
                 .keyboardShortcut(.defaultAction)
-                .disabled(ready.isEmpty)
+                .disabled(ready.isEmpty || isPublishing)
             }
         }
         .padding(16)

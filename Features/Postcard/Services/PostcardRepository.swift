@@ -161,7 +161,7 @@ final class PostcardRepository: ObservableObject {
         case .dateScanned:
             sortField = "scannedAt"
         case .price:
-            sortField = "aiData.suggestedPriceCAD.price"
+            sortField = "aiData.suggestedPrice.price"
         }
         query = query.order(by: sortField, descending: sortOrder.descending)
 

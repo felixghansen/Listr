@@ -11,7 +11,8 @@ import FirebaseFirestore
 
 struct PostcardDetails: Codable, Identifiable {
     @DocumentID var id: String?
-
+    
+    var ebayListingId: String?
     var batchID: String
     var scannedAt: Date
     var status: PostcardStatus
@@ -76,6 +77,11 @@ extension PostcardDetails {
         if status == .needsReview || status == .readyToList {
             status = Self.containsUnknownFields(in: newAIData) ? .needsReview : .readyToList
         }
+    }
+    
+    mutating func markListed(listingId: String) {
+        ebayListingId = listingId
+        status = .listed
     }
 }
 
