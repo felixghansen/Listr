@@ -5,8 +5,8 @@ import AppKit
 final class PostcardAnalysisController: ObservableObject {
     @Published var isAnalyzing = false
     @Published var errorMessage: String?
-    @Published var totalImages = 0
-    @Published var imagesAnalyzed = 0
+    @Published var totalPostcards = 0
+    @Published var postcardsAnalyzed = 0
 
     private let analyzer = PostcardAnalyzer()
     private let decoder = JSONDecoder()
@@ -54,8 +54,8 @@ final class PostcardAnalysisController: ObservableObject {
                 return
             }
 
-            totalImages = imageFiles.count
-            imagesAnalyzed = 0
+            totalPostcards = imageFiles.count / 2
+            postcardsAnalyzed = 0
             errorMessage = nil
             isAnalyzing = true
 
@@ -96,7 +96,7 @@ final class PostcardAnalysisController: ObservableObject {
             let postcards = await createPostcards(from: aiResults, imageGroup: imageGroup, batchID: batchID)
             try await PostcardRepository.shared.savePostcards(postcards, toBatch: batchID)
 
-            imagesAnalyzed = min(imagesAnalyzed + postcards.count * 2, totalImages)
+            postcardsAnalyzed = min(postcardsAnalyzed + postcards.count, totalPostcards)
         } catch {
             print("Saving analysis result failed: \(error)")
             errorMessage = "Couldn't save some postcards: \(error.localizedDescription)"

@@ -122,8 +122,8 @@ struct ContentView: View {
     private var analysisOverlay: some View {
         if controller.isAnalyzing {
             AnalysisProgressPopup(
-                analyzed: controller.imagesAnalyzed,
-                total: controller.totalImages,
+                analyzed: controller.postcardsAnalyzed,
+                total: controller.totalPostcards,
                 onCancel: { controller.cancelAnalysis() }
             )
             .transition(.opacity)
@@ -134,10 +134,5 @@ struct ContentView: View {
                 .foregroundStyle(.red)
                 .padding()
         }
-    }
-
-    private var analysisProgress: Double? {
-        guard controller.totalImages > 0 else { return nil }
-        return Double(controller.imagesAnalyzed) / Double(controller.totalImages)
     }
 }
