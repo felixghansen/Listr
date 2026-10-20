@@ -77,16 +77,9 @@ struct ContentView: View {
         }
     }
     
-    private func onUpdateEbay() {
+    private func onUpdateEbay() async throws {
         guard let postcard = selectedPostcards.first else { return }
-        
-        Task {
-            do {
-                try await client.updateListing(postcard)
-            } catch {
-                print(error)
-            }
-        }
+        try await client.updateListing(postcard)
     }
     
     private func listPostcard(_ postcard: PostcardDetails) async throws {
@@ -95,19 +88,16 @@ struct ContentView: View {
         var updatedPostcard = postcard
         updatedPostcard.markListed(listingId: listingId)
         
+        if let index = selectedPostcards.firstIndex(where: { $0.id == updatedPostcard.id }) {
+            selectedPostcards[index] = updatedPostcard
+        }
+        
         try await postcardRepo.updatePostcard(updatedPostcard)
     }
     
-    private func onListEbay() {
+    private func onListEbay() async throws {
         guard let postcard = selectedPostcards.first else { return }
-        
-        Task {
-            do {
-                try await listPostcard(postcard)
-            } catch {
-                print(error)
-            }
-        }
+        try await listPostcard(postcard)
     }
 
     private func loadPostcards() {

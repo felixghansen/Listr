@@ -11,21 +11,34 @@ import Flow
 struct EditorContent: View {
     let postcard: PostcardDetails
     let onSave: (PostcardDetails) -> Void
-    let onListEbay: () -> Void
-    let onUpdateEbay: () -> Void
+    let onListEbay: () async throws -> Void
+    let onUpdateEbay: () async throws -> Void
 
     @Environment(\.openURL) private var openURL
     
     private let padding: CGFloat = 16
 
     @StateObject private var editor: PostcardEditor
-    @State private var showDeleteConfirmation = false
-    @State private var deleteErrorMessage: String? = nil
     
-    private var showDeleteErrorMessage: Binding<Bool> {
-        Binding<Bool>(
-            get: { deleteErrorMessage != nil },
-            set: { newValue in if !newValue { deleteErrorMessage = nil } }
+    @State private var isListing = false
+    @State private var isUpdating = false
+    
+    @State private var errorTitle = ""
+    @State private var errorMessage: String?
+
+    private func showError(_ title: String, _ error: Error) {
+        errorTitle = title
+        errorMessage = error.localizedDescription
+    }
+    
+    private var showErrorMessage: Binding<Bool> {
+        Binding(
+            get: { errorMessage != nil },
+            set: { isShowing in
+                if !isShowing {
+                    errorMessage = nil
+                }
+            }
         )
     }
     
@@ -42,8 +55,8 @@ struct EditorContent: View {
     init(
         postcard: PostcardDetails,
         onSave: @escaping (PostcardDetails) -> Void,
-        onListEbay: @escaping () -> Void,
-        onUpdateEbay: @escaping () -> Void
+        onListEbay: @escaping () async throws -> Void,
+        onUpdateEbay: @escaping () async throws -> Void
     ) {
         self.postcard = postcard
         self.onSave = onSave
@@ -114,7 +127,7 @@ struct EditorContent: View {
                     if postcard.status != .sold {
                         Button("Save") {
                             let updated = editor.commitAndReset()
-
+                            
                             Task {
                                 try await PostcardRepository.shared.updatePostcard(updated)
                                 onSave(updated)
@@ -123,22 +136,60 @@ struct EditorContent: View {
                         .buttonStyle(.borderedProminent)
                         .disabled(!editor.hasChanges)
                     }
-
+                    
                     switch postcard.status {
                     case .needsReview:
                         EmptyView()
-
+                        
                     case .readyToList:
-                        Button("List on eBay") {
-                            onListEbay()
+                        Button {
+                            Task {
+                                isListing = true
+                                
+                                do {
+                                    try await onListEbay()
+                                    isListing = false
+                                } catch {
+                                    showError("Couldn't list on eBay", error)
+                                }
+                            }
+                        } label: {
+                            if isListing {
+                                HStack(spacing: 8) {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                    Text("Listing...")
+                                }
+                            } else {
+                                Text("List on eBay")
+                            }
                         }
-                        .disabled(editor.hasChanges)
+                        .disabled(editor.hasChanges || isListing)
 
                     case .listed:
-                        Button("Update on eBay") {
-                            onUpdateEbay()
+                        Button {
+                            Task {
+                                isUpdating = true
+                                
+                                do {
+                                    try await onUpdateEbay()
+                                    isUpdating = false
+                                } catch {
+                                    showError("Couldn't update on eBay", error)
+                                }
+                            }
+                        } label: {
+                            if isUpdating {
+                                HStack(spacing: 8) {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                    Text("Updating...")
+                                }
+                            } else {
+                                Text("Update on eBay")
+                            }
                         }
-                        .disabled(editor.hasChanges)
+                        .disabled(editor.hasChanges || isUpdating)
 
                         viewOnEbayButton
 
@@ -152,12 +203,11 @@ struct EditorContent: View {
         .onChange(of: postcard.id) { _, _ in
             editor.reset(with: postcard)
         }
-        .alert("Error", isPresented: showDeleteErrorMessage) {
-            Button("OK", role: .cancel) { deleteErrorMessage = nil }
+        .alert(errorTitle, isPresented: showErrorMessage) {
+            Button("OK", role: .cancel) {}
         } message: {
-            Text(deleteErrorMessage ?? "")
+            Text(errorMessage ?? "")
         }
-        
     }
 }
 

@@ -2,8 +2,8 @@ import SwiftUI
 
 struct PostcardInspector: View {
     @Binding var selectedPostcards: [PostcardDetails]
-    var onListEbay: () -> Void
-    var onUpdateEbay: () -> Void
+    var onListEbay: () async throws -> Void
+    var onUpdateEbay: () async throws -> Void
     
     var body: some View {
         Group {
