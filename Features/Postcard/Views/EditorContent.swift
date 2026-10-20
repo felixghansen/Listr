@@ -267,17 +267,26 @@ struct BasicInfoSection: View {
             }
             
             VStack(alignment: .leading, spacing: 4) {
-                Text("Era")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                HStack(spacing: 8) {
+                    Text("Era")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    if era == "Unknown" {
+                        Text("(required)")
+                            .foregroundStyle(era == "Unknown" ? .red : .secondary)
+                    }
+                }
+                .font(.caption)
+
                 Picker("Era", selection: $era) {
-                    ForEach(EbayAspectValues.era, id: \.self) { value in
+                    Text("Select an era...").tag("Unknown")
+                    ForEach(EbayAspectValues.era.filter { $0 != "Unknown" }, id: \.self) { value in
                         Text(value).tag(value)
                     }
                 }
                 .pickerStyle(.menu)
                 .labelsHidden()
-                .frame(maxWidth: .infinity, alignment: .leading)
+
             }
         }
     }
@@ -294,11 +303,22 @@ struct TypeSection: View {
                 .foregroundStyle(.primary)
             
             VStack(alignment: .leading, spacing: 4) {
-                Text("Material")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                HStack(spacing: 8) {
+                    Text("Material")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    if material == "Unknown" {
+                        Text("(required)")
+                            .foregroundStyle(material == "Unknown" ? .red : .secondary)
+                    }
+                }
+                .font(.caption)
+
+                
                 Picker("Material", selection: $material) {
-                    ForEach(EbayAspectValues.material, id: \.self) { value in
+                    Text("Select a material...")
+                        .tag("Unknown")
+                    ForEach(EbayAspectValues.material.filter { $0 != "Unknown" }, id: \.self) { value in
                         Text(value).tag(value)
                     }
                 }
@@ -308,11 +328,19 @@ struct TypeSection: View {
             }
             
             VStack(alignment: .leading, spacing: 4) {
-                Text("Style")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                HStack(spacing: 8) {
+                    Text("Style")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    if style == "Unknown" {
+                        Text("(required)")
+                            .foregroundStyle(style == "Unknown" ? .red : .secondary)
+                    }
+                }
+                .font(.caption)
                 Picker("Style", selection: $style) {
-                    ForEach(EbayAspectValues.style, id: \.self) { value in
+                    Text("Select a style...").tag("Unknown")
+                    ForEach(EbayAspectValues.style.filter { $0 != "Unknown" }, id: \.self) { value in
                         Text(value).tag(value)
                     }
                 }
@@ -565,3 +593,13 @@ struct ListingSection: View {
         }
     }
 }
+
+//#Preview {
+//    BasicInfoSection(
+//        title: .constant("Nuremberg Germany St Lorenz Church Tram DB c1910s"),
+//        description: .constant("Vintage postcard of St. Lorenz Church in Nuremberg."),
+//        era: .constant("Unknown")
+//    )
+//    .padding()
+//    .frame(width: 400)
+//}
