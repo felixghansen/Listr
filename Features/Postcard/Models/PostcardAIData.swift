@@ -19,13 +19,6 @@ struct PostcardAIData: Codable, Equatable {
     var mailingOrigin: String
     var ebayCategoryID: Int
     var suggestedPrice: SuggestedPrice
-    var confidence: Confidence
-    
-    enum Confidence: String, Codable, CaseIterable {
-        case high
-        case medium
-        case low
-    }
 
     struct PostcardType: Codable, Equatable {
         var material: String

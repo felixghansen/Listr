@@ -39,13 +39,12 @@ extension PostcardDetails {
     ) {
         self.batchID = batchID
         self.scannedAt = scannedAt
-        self.frontImageURLString = frontImageURLString
-        self.backImageURLString = backImageURLString
-        self.aiData = aiData
-
         self.status = Self.containsUnknownFields(in: aiData)
             ? .needsReview
             : .readyToList
+        self.frontImageURLString = frontImageURLString
+        self.backImageURLString = backImageURLString
+        self.aiData = aiData
     }
     
     private static let unknownValues = ["Unknown", "Unposted", "None"]

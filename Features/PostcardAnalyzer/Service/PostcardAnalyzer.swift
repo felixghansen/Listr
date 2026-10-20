@@ -21,8 +21,7 @@ struct PostcardAnalyzer {
         "suggestedPrice": .object(properties: [
             "price": .double(),
             "auctionStart": .double()
-        ]),
-        "confidence": .enumeration(values: PostcardAIData.Confidence.allCases.map(\.rawValue))
+        ])
     ]))
     
     init() {
@@ -128,7 +127,7 @@ struct PostcardAnalyzer {
 
         GENERAL RULES
         - Capitalize proper nouns.
-        - If data is missing or unclear, use the fallback given in that field's instructions.
+        - For era, material, and style: if you are not reasonably sure, choose "Unknown". A wrong value is worse than "Unknown", because the seller reviews every Unknown field before listing.
 
         FIELD INSTRUCTIONS
         1. title
@@ -154,7 +153,7 @@ struct PostcardAnalyzer {
         First decide whether the card is European (published in Europe or showing a European place).
         - If European, you MUST use a "Europe Era" value based on the estimated date, even if the back style matches another period.
         - If not European, use the period matching the card's printing and back.
-        Use "Real Photo (1900-Now)" only for a non-European real photo card whose date can't be narrowed down. Use "Unknown" only if no period can be determined.
+        Use "Real Photo (1900-Now)" only for a non-European real photo card whose date can't be narrowed down.
 
         4. type
         material: the card's type, one of \(EbayAspectValues.material.joined(separator: ", ")).
@@ -162,7 +161,7 @@ struct PostcardAnalyzer {
         style: the back type, one of \(EbayAspectValues.style.joined(separator: ", ")).
 
         5. publisher
-        The publisher’s name only, as printed on the card. Exclude addresses, cities, printer credits, and parenthetical notes. Max 65 characters. Use “Unknown” if none.
+        The publisher’s name only, as printed on the card. Exclude addresses, cities, printer credits, and parenthetical notes. Max 65 characters. Use "Unknown" if none.
 
         6. keywords
         3–6 collector search terms not already in the title (e.g., Streetcar, Bridge, Automobile). Include common synonyms buyers search for (e.g., Tram and Streetcar).
@@ -187,9 +186,6 @@ struct PostcardAnalyzer {
         - Strong RPPC (rare town, disaster, or transportation): $40–100+
         - Artist-signed or themed (Halloween, WWI, Santa, etc.): $15–100 for typical examples; $100–400+ only for rare or exceptional cards
         Set auctionStart to 25–50% of price.
-        
-        12. confidence
-        How confident you are in the era, type, and location overall. Use “low” if you guessed any of them, if the image is unclear, or if the card is unusual.
         """
     }
 }
