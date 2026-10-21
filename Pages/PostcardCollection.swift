@@ -10,6 +10,7 @@ import SwiftUI
 struct PostcardCollection: View {
     let postcards: [PostcardSummary]
     @Binding var selectedPostcards: [PostcardDetails]
+    let onDelete: ([PostcardDetails]) -> Void
 
     private let postcardRepo = PostcardRepository.shared
     @State private var loadingIDs: Set<String> = []
@@ -22,10 +23,26 @@ struct PostcardCollection: View {
         PostcardGallery(
             postcards: postcards,
             isSelected: { selectedIDs.contains($0.id) },
-            onSelect: { handleSelection($0) },
+            onSelect: handleSelection,
+            onDelete: handleDelete,
             clearSelection: { selectedPostcards = [] }
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+    
+    private func handleDelete(_ clicked: PostcardSummary) {
+        if selectedIDs.contains(clicked.id) {
+            onDelete(selectedPostcards)
+        } else {
+            Task {
+                do {
+                    let details = try await postcardRepo.details(for: clicked.id)
+                    onDelete([details])
+                } catch {
+                    print("Failed to laod postcard details: \(error)")
+                }
+            }
+        }
     }
 
     private func handleSelection(_ postcard: PostcardSummary) {

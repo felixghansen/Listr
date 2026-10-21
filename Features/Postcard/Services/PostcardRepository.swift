@@ -1,5 +1,6 @@
 import Foundation
 import FirebaseFirestore
+import FirebaseStorage
 import FirebaseAuth
 
 @MainActor
@@ -127,10 +128,11 @@ final class PostcardRepository: ObservableObject {
         removeFromCache(ids: [id])
 
         try await BatchRepository.shared.deletePostcard(postcard)
+        await deleteImages(for: [postcard])
     }
 
-    func deletePostcards(_ postcardsToDelete: [PostcardDetails]) async throws {
-        let ids = postcardsToDelete.compactMap(\.id)
+    func deletePostcards(_ postcards: [PostcardDetails]) async throws {
+        let ids = postcards.compactMap(\.id)
         
         // atomic commit
         let deleteBatch = db.batch()
@@ -140,10 +142,23 @@ final class PostcardRepository: ObservableObject {
         try await deleteBatch.commit()
         removeFromCache(ids: Set(ids))
 
-        await BatchRepository.shared.deletePostcards(postcardsToDelete)
+        await BatchRepository.shared.deletePostcards(postcards)
+        await deleteImages(for: postcards)
     }
 
     // MARK: - Helpers
+    
+    private func deleteImages(for postcards: [PostcardDetails]) async {
+        let urls = postcards.flatMap { [$0.frontImageURLString, $0.backImageURLString ]}
+        
+        await withTaskGroup(of: Void.self) { group in
+            for url in urls {
+                group.addTask {
+                    try? await Storage.storage().reference(forURL: url).delete()
+                }
+            }
+        }
+    }
 
     private func makeQuery(for filter: PostcardFilter, sortedBy sortOrder: PostcardSortOrder) -> Query {
         var query: Query = postcardsCollection

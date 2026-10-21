@@ -18,13 +18,16 @@ struct ContentView: View {
     @State private var selectedPostcards: [PostcardDetails] = []
     @State private var showInspector = true
     @State private var showEbaySheet = false
+    
+    @State private var postcardsToDelete: [PostcardDetails] = []
+    @State private var showDeleteConfirmation = false
 
     var body: some View {
         NavigationSplitView {
             Sidebar(batchID: $filter.batchID, batches: batchRepo.batches, auth: auth)
                 .navigationSplitViewColumnWidth(200)
         } detail: {
-            PostcardCollection(postcards: visiblePostcards, selectedPostcards: $selectedPostcards)
+            PostcardCollection(postcards: visiblePostcards, selectedPostcards: $selectedPostcards, onDelete: requestDelete)
                 .frame(minWidth: 500)
                 .navigationTitle(title)
                 .searchable(text: $searchText, placement: .sidebar, prompt: "Search")
@@ -54,7 +57,7 @@ struct ContentView: View {
                         onListEbay: onListEbay,
                         onUpdateEbay: onUpdateEbay
                     )
-                        .inspectorColumnWidth(min: 300, ideal: 400, max: 500)
+                    .inspectorColumnWidth(min: 300, ideal: 400, max: 500)
                 }
         }
         .overlay { analysisOverlay }
@@ -74,6 +77,67 @@ struct ContentView: View {
         }
         .onChange(of: sortOrder) {
             loadPostcards()
+        }
+        .onDeleteCommand {
+            requestDelete(selectedPostcards)
+        }
+        .confirmationDialog(
+            postcardsToDelete.count == 1 ? "Delete this postcard?" : "Delete \(postcardsToDelete.count) postcards?",
+            isPresented: $showDeleteConfirmation
+        ) {
+            Button("Delete", role: .destructive) {
+                Task {
+                    do {
+                        try await deletePostcards(postcardsToDelete)
+                    } catch {
+                        print("Error deleting postcards: \(error.localizedDescription)")
+                    }
+                }
+            }
+        } message: {
+            let listedCount = postcardsToDelete.filter { $0.status == .listed }.count
+            
+            if listedCount > 0 {
+                Text("\(listedCount) of these postcards are listed on eBay. Their listings will be deleted.\n This can't be undone")
+            } else {
+                Text("This can't be undone.")
+            }
+        }
+    }
+    
+    private func requestDelete(_ postcards: [PostcardDetails]) {
+        guard !postcards.isEmpty else { return }
+        showDeleteConfirmation = true
+        postcardsToDelete = postcards
+    }
+    
+    private func deletePostcards(_ postcards: [PostcardDetails]) async throws {
+        var postcardsToDelete: [PostcardDetails] = []
+        var firstError: Error?
+        
+        for postcard in postcards {
+            if postcard.status == .listed {
+                do {
+                    try await client.deleteListing(postcard)
+                } catch {
+                    firstError = firstError ?? error
+                    continue
+                }
+            }
+            
+            postcardsToDelete.append(postcard)
+        }
+        
+        if !postcardsToDelete.isEmpty {
+            try await postcardRepo.deletePostcards(postcardsToDelete)
+        }
+        
+        selectedPostcards.removeAll { selected in
+            postcardsToDelete.contains { $0.id == selected.id }
+        }
+        
+        if let firstError {
+            throw firstError
         }
     }
     

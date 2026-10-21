@@ -5,6 +5,7 @@ struct PostcardGallery: View {
     let postcards: [PostcardSummary]
     let isSelected: (PostcardSummary) -> Bool
     let onSelect: (PostcardSummary) -> Void
+    let onDelete: (PostcardSummary) -> Void
     let clearSelection: () -> Void
     
     private let postcardRepo = PostcardRepository.shared
@@ -29,6 +30,18 @@ struct PostcardGallery: View {
                             cardWidth: cardWidth,
                             isSelected: isSelected(postcard)
                         )
+                        .contextMenu {
+                            let count = isSelected(postcard) ? visibleSelectedCount : 1
+                            
+                            Button(role: .destructive) {
+                                onDelete(postcard)
+                            } label: {
+                                Label(
+                                    count == 1 ? "Delete 1 Postcard" : "Delete \(count) Postcards",
+                                    systemImage: "trash"
+                                )
+                            }
+                        }
                         .onTapGesture { onSelect(postcard) }
                         .onAppear {
                             Task {

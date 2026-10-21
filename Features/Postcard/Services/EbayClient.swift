@@ -178,6 +178,17 @@ struct EbayClient {
         let _ = try await createOffer(postcard) // the createOffer function handles existing offers, in which case it updates them
     }
     
+    func deleteListing(_ postcard: PostcardDetails) async throws {
+        guard let id = postcard.id else {
+            throw EbayClientError.missingPostcardID
+        }
+        do {
+            _ = try await fetchData(path: "/sell/inventory/v1/inventory_item/\(id)", method: "DELETE")
+        } catch let error as EbayError where error.errors.contains(where: { $0.errorId == 25710 }) {
+            
+        }
+    }
+    
     private func createOrReplaceInventoryItem(_ postcard: PostcardDetails) async throws {
         guard let id = postcard.id else {
             throw EbayClientError.missingPostcardID
