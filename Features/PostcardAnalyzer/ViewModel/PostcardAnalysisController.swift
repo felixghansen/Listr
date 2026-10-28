@@ -53,6 +53,11 @@ final class PostcardAnalysisController: ObservableObject {
                 errorMessage = "No valid images found in folder."
                 return
             }
+            
+            guard imageFiles.count.isMultiple(of: 2) else {
+                errorMessage = "Found \(imageFiles.count) images. Each postcard needs a front and back image, so add or remove one and try again."
+                return
+            }
 
             totalPostcards = imageFiles.count / 2
             postcardsAnalyzed = 0
