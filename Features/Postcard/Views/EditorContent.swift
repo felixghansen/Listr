@@ -158,7 +158,7 @@ struct EditorContent: View {
                                 HStack(spacing: 8) {
                                     ProgressView()
                                         .controlSize(.small)
-                                    Text("Listing...")
+                                    Text("Listing…")
                                 }
                             } else {
                                 Text("List on eBay")
@@ -183,7 +183,7 @@ struct EditorContent: View {
                                 HStack(spacing: 8) {
                                     ProgressView()
                                         .controlSize(.small)
-                                    Text("Updating...")
+                                    Text("Updating…")
                                 }
                             } else {
                                 Text("Update on eBay")
@@ -279,7 +279,7 @@ struct BasicInfoSection: View {
                 .font(.caption)
 
                 Picker("Era", selection: $era) {
-                    Text("Select an era...").tag("Unknown")
+                    Text("Select an era…").tag("Unknown")
                     ForEach(EbayAspectValues.era.filter { $0 != "Unknown" }, id: \.self) { value in
                         Text(value).tag(value)
                     }
@@ -339,7 +339,7 @@ struct TypeSection: View {
                 }
                 .font(.caption)
                 Picker("Style", selection: $style) {
-                    Text("Select a style...").tag("Unknown")
+                    Text("Select a style…").tag("Unknown")
                     ForEach(EbayAspectValues.style.filter { $0 != "Unknown" }, id: \.self) { value in
                         Text(value).tag(value)
                     }
@@ -435,7 +435,7 @@ struct KeywordsSection: View {
             
             // Add keyword text field
             HStack(spacing: 8) {
-                TextField("Add keyword...", text: $newKeyword)
+                TextField("Add keyword…", text: $newKeyword)
                     .textFieldStyle(.plain)
                     .padding(8)
                     .background(.tertiary)
