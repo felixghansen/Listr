@@ -69,6 +69,8 @@ struct EditorContent: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 ImageCarousel(
+                    frontImageThumbnailURL:
+                        postcard.frontImageThumbnailURL,
                     imageURLs: [
                         postcard.frontImageURL,
                         postcard.backImageURL

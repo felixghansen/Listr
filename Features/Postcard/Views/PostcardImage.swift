@@ -16,13 +16,19 @@ enum ImageScale {
 struct PostcardImage: View {
     let url: URL?
     let scaledTo: ImageScale
+    var placeholderURL: URL? = nil
 
-    @StateObject private var loader = ImageLoader(url: nil)
+    @StateObject private var imageLoader = ImageLoader(url: nil)
+    @StateObject private var placeholderLoader = ImageLoader(url: nil)
 
     var body: some View {
         Group {
-            if let image = loader.image {
+            if let image = imageLoader.image {
                 Image(nsImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: scaledTo == .fill ? .fill : .fit)
+            } else if let placeholder = placeholderLoader.image {
+                Image(nsImage: placeholder)
                     .resizable()
                     .aspectRatio(contentMode: scaledTo == .fill ? .fill : .fit)
             } else {
@@ -33,15 +39,20 @@ struct PostcardImage: View {
         }
         .clipped()
         .onAppear {
-            loader.update(url: url)
+            imageLoader.update(url: url)
+            placeholderLoader.update(url: placeholderURL)
         }
         .onChange(of: url) { _, newURL in
-            loader.update(url: newURL)
+            imageLoader.update(url: newURL)
+        }
+        .onChange(of: placeholderURL) { _, newURL in
+            placeholderLoader.update(url: newURL)
         }
     }
 }
 
 struct ImageCarousel: View {
+    let frontImageThumbnailURL: URL?
     let imageURLs: [URL?]
 
     private let aspectRatio: CGFloat = 3 / 2
@@ -56,7 +67,7 @@ struct ImageCarousel: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(spacing: 0) {
                         ForEach(Array(imageURLs.enumerated()), id: \.offset) { index, imageURL in
-                            PostcardImage(url: imageURL, scaledTo: .fit)
+                            PostcardImage(url: imageURL, scaledTo: .fit, placeholderURL: index == 0 ? frontImageThumbnailURL : nil)
                                 .onTapGesture {
                                     triggerQuickLook()
                                 }
