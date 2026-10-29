@@ -150,10 +150,11 @@ struct EditorContent: View {
                                 
                                 do {
                                     try await onListEbay()
-                                    isListing = false
                                 } catch {
                                     showError("Couldn't list on eBay", error)
                                 }
+                                
+                                isListing = false
                             }
                         } label: {
                             if isListing {
@@ -175,10 +176,11 @@ struct EditorContent: View {
                                 
                                 do {
                                     try await onUpdateEbay()
-                                    isUpdating = false
                                 } catch {
                                     showError("Couldn't update on eBay", error)
                                 }
+                                
+                                isUpdating = false
                             }
                         } label: {
                             if isUpdating {
