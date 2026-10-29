@@ -42,25 +42,7 @@
 		DCDE6B852EA55893009B580F /* ListrUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ListrUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		DC2F6859309272CB00288C95 /* Exceptions for "Public" folder in "Listr" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				"ebay-callback.html",
-			);
-			target = DC073CB02E9E170A005BE5BD /* Listr */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		DC2F68543092717400288C95 /* Public */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				DC2F6859309272CB00288C95 /* Exceptions for "Public" folder in "Listr" target */,
-			);
-			path = Public;
-			sourceTree = "<group>";
-		};
 		DCDE6B4D2EA05686009B580F /* App */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = App;
@@ -123,7 +105,6 @@
 		DC073CA82E9E170A005BE5BD = {
 			isa = PBXGroup;
 			children = (
-				DC2F68543092717400288C95 /* Public */,
 				DCCF77302F5BEAF6009AF03F /* Listr.entitlements */,
 				DCCF76D42F5A513B009AF03F /* .gitignore */,
 				DCDE6B7B2EA1B22E009B580F /* Resources */,
@@ -161,7 +142,6 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				DC2F68543092717400288C95 /* Public */,
 				DCDE6B4D2EA05686009B580F /* App */,
 				DCDE6B502EA056A3009B580F /* Pages */,
 				DCDE6B512EA056A7009B580F /* Features */,
