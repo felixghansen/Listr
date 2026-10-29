@@ -10,17 +10,13 @@ import Foundation
 struct PostcardSummary: Identifiable {
     let id: String
     let title: String
-    let scannedAt: Date
-    let frontImageURL: URL?
-    let backImageURL: URL?
+    let frontImageURL: URL? // TODO: Change this to a smaller, thumnail version
     let status: PostcardStatus
 
     init(from details: PostcardDetails) {
         self.id = details.id ?? UUID().uuidString
         self.title = details.aiData.title
-        self.scannedAt = details.scannedAt
         self.frontImageURL = details.frontImageURL
-        self.backImageURL = details.backImageURL
         self.status = details.status
     }
 }
