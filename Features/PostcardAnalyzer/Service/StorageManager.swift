@@ -17,15 +17,7 @@ final class StorageManager {
     
     private init() {}
     
-    func uploadImage(_ image: NSImage, batchID: String, fileName: String) async throws -> String {
-        guard let tiffData = image.tiffRepresentation,
-              let bitmap = NSBitmapImageRep(data: tiffData),
-              let data = bitmap.representation(using: .jpeg, properties: [:]) else {
-            throw NSError(
-                domain: "UploadError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to convert NSImage to JPEG data"]
-            )
-        }
-
+    func uploadImageData(_ data: Data, batchID: String, fileName: String) async throws -> String {
         let path = "users/\(userID)/batches/\(batchID)/\(fileName)"
         let storageRef = storage.reference().child(path)
         

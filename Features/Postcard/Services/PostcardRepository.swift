@@ -199,7 +199,7 @@ final class PostcardRepository: ObservableObject {
     }
 
     private func preloadImages(for summaries: [PostcardSummary]) async {
-        let urls = summaries.compactMap(\.frontImageURL)
+        let urls = summaries.compactMap(\.frontImageThumbnailURL)
 
         await withTaskGroup(of: Void.self) { group in
             for url in urls {

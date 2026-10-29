@@ -16,9 +16,14 @@ struct PostcardDetails: Codable, Identifiable {
     var batchID: String
     var scannedAt: Date
     var status: PostcardStatus
+    var frontImageThumbnailURLString: String
     var frontImageURLString: String
     var backImageURLString: String
     var aiData: PostcardAIData
+    
+    var frontImageThumbnailURL: URL? {
+        URL(string: frontImageThumbnailURLString)
+    }
     
     var frontImageURL: URL? {
         URL(string: frontImageURLString)
@@ -33,6 +38,7 @@ extension PostcardDetails {
     init(
         batchID: String,
         scannedAt: Date,
+        frontImageThumbnailURLString: String,
         frontImageURLString: String,
         backImageURLString: String,
         aiData: PostcardAIData
@@ -42,6 +48,7 @@ extension PostcardDetails {
         self.status = Self.containsUnknownFields(in: aiData)
             ? .needsReview
             : .readyToList
+        self.frontImageThumbnailURLString = frontImageThumbnailURLString
         self.frontImageURLString = frontImageURLString
         self.backImageURLString = backImageURLString
         self.aiData = aiData

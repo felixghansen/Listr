@@ -115,24 +115,34 @@ final class PostcardAnalysisController: ObservableObject {
         for (index, aiData) in aiResults.enumerated() {
             let frontIndex = index * 2
 
-            guard frontIndex + 1 < imageGroup.count,
-                  let frontImage = NSImage(contentsOf: imageGroup[frontIndex]),
-                  let backImage = NSImage(contentsOf: imageGroup[frontIndex + 1]) else {
-                print("Skipped postcard \(index): missing or unreadable image pair")
+            guard frontIndex + 1 < imageGroup.count else {
+                print("Skipped postcard \(index): missing image pair")
+                continue
+            }
+            
+            let frontFileURL = imageGroup[frontIndex]
+            let backFileURL = imageGroup[frontIndex + 1]
+            
+            guard let frontThumbnailData = ImageCompressor.jpegData(from: frontFileURL, maxPixelSize: 400, quality: 0.7),
+                  let frontData = ImageCompressor.jpegData(from: frontFileURL, maxPixelSize: 1600, quality: 0.85),
+                  let backData = ImageCompressor.jpegData(from: backFileURL, maxPixelSize: 1600, quality: 0.85) else {
+                print("Skipped postcard \(index): couldn't read or process images")
                 continue
             }
 
             do {
-                // upload postcards to firebase
                 let postcardID = UUID().uuidString
-                let frontURL = try await StorageManager.shared.uploadImage(frontImage, batchID: batchID, fileName: "\(postcardID)_front.jpg")
-                let backURL = try await StorageManager.shared.uploadImage(backImage, batchID: batchID, fileName: "\(postcardID)_back.jpg")
 
-                let postcard = PostcardDetails(
+                async let frontImageThumbnailURLString = StorageManager.shared.uploadImageData(frontThumbnailData, batchID: batchID, fileName: "\(postcardID)_front_thumbnail.jpg")
+                async let frontImageURLString = StorageManager.shared.uploadImageData(frontData, batchID: batchID, fileName: "\(postcardID)_front.jpg")
+                async let backImageURLString = StorageManager.shared.uploadImageData(backData, batchID: batchID, fileName: "\(postcardID)_back.jpg")
+                
+                let postcard = try await PostcardDetails(
                     batchID: batchID,
                     scannedAt: Date(),
-                    frontImageURLString: frontURL,
-                    backImageURLString: backURL,
+                    frontImageThumbnailURLString: frontImageThumbnailURLString,
+                    frontImageURLString: frontImageURLString,
+                    backImageURLString: backImageURLString,
                     aiData: aiData
                 )
                 postcards.append(postcard)

@@ -10,13 +10,13 @@ import Foundation
 struct PostcardSummary: Identifiable {
     let id: String
     let title: String
-    let frontImageURL: URL? // TODO: Change this to a smaller, thumnail version
+    let frontImageThumbnailURL: URL?
     let status: PostcardStatus
 
     init(from details: PostcardDetails) {
         self.id = details.id ?? UUID().uuidString
         self.title = details.aiData.title
-        self.frontImageURL = details.frontImageURL
+        self.frontImageThumbnailURL = details.frontImageThumbnailURL
         self.status = details.status
     }
 }

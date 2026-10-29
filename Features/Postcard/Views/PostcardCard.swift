@@ -12,7 +12,7 @@ struct PostcardCard: View {
     var body: some View {
         VStack(spacing: 8) {
             PostcardImage(
-                url: postcard.frontImageURL,
+                url: postcard.frontImageThumbnailURL,
                 scaledTo: .fill
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
