@@ -7,11 +7,13 @@
 
 import SwiftUI
 import AuthenticationServices
+import FirebaseFunctions
 
 enum EbayAuthError: LocalizedError {
     case cancelled
     case stateMismatch
     case missingCode
+    case unexpectedResponse
 
     var errorDescription: String? {
         switch self {
@@ -21,6 +23,8 @@ enum EbayAuthError: LocalizedError {
             return "Something went wrong verifying the eBay sign-in. Please try again."
         case .missingCode:
             return "eBay didn't return a sign-in code. Please try again."
+        case .unexpectedResponse:
+            return "Couldn't finish connecting your eBay account. Please try again."
         }
     }
 }
@@ -28,6 +32,7 @@ enum EbayAuthError: LocalizedError {
 @MainActor
 final class EbayAuthService: ObservableObject {
     static let shared = EbayAuthService()
+    private lazy var functions = Functions.functions()
     private init() {}
 
     @Published private(set) var isConnected = false
@@ -68,9 +73,15 @@ final class EbayAuthService: ObservableObject {
         }
 
         pendingState = nil
-
-        // TODO (Milestone 3): send code to the exchangeEbayCode Cloud Function
-        print("eBay code:", code)
+        
+        let result = try await functions
+            .httpsCallable("exchangeEbayCode")
+            .call(["code": code])
+        
+        guard let data = result.data as? [String: Any], data["success"] as? Bool == true else {
+            throw EbayAuthError.unexpectedResponse
+        }
+        
         isConnected = true
     }
 
