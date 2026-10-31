@@ -3,10 +3,9 @@ import FirebaseCore
 import FirebaseAppCheck
 
 @main
-struct YourApp: App {
+struct ListrApp: App {
     @StateObject var authService = AuthService.shared
     @StateObject var authVM = AuthViewModel()
-    @StateObject var coordinator = AccountSettingsCoordinator()
     
     init() {
         let providerFactory = AppCheckDebugProviderFactory()
@@ -21,7 +20,6 @@ struct YourApp: App {
                     .frame(idealWidth: 1000, minHeight: 500, idealHeight: 750)
                     .environmentObject(authVM)
                     .environmentObject(authService) // for features like signing out and changing name, email, maybe password
-                    .environmentObject(coordinator)
             } else {
                 AuthEntry()
                     .frame(idealWidth: 1000, minHeight: 500, idealHeight: 750)
