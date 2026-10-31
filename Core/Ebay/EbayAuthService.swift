@@ -35,7 +35,6 @@ final class EbayAuthService: ObservableObject {
     private lazy var functions = Functions.functions()
     private init() {}
 
-    @Published private(set) var isConnected = false
     private var pendingState: String?
 
     private let config = EbayConfig.current
@@ -73,13 +72,10 @@ final class EbayAuthService: ObservableObject {
         guard let data = result.data as? [String: Any], data["success"] as? Bool == true else {
             throw EbayAuthError.unexpectedResponse
         }
-        
-        isConnected = true
     }
 
     func disconnect() {
         // TODO: delete the stored refresh token via a Cloud Function
-        isConnected = false
     }
 
     private func signInURL(state: String) -> URL {

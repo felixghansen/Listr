@@ -4,7 +4,8 @@ import AuthenticationServices
 struct AccountSettings: View {
     @EnvironmentObject var authVM: AuthViewModel
     @Binding var showSettings: Bool
-
+    
+    @ObservedObject private var userRepo = UserRepository.shared
     @ObservedObject private var auth = AuthService.shared
     @ObservedObject private var ebayAuthService = EbayAuthService.shared
     @Environment(\.webAuthenticationSession) private var webAuthenticationSession
@@ -23,7 +24,7 @@ struct AccountSettings: View {
 
                 Section {
                     LabeledContent("eBay Account") {
-                        if ebayAuthService.isConnected {
+                        if userRepo.isEbayConnected {
                             HStack(spacing: 6) {
                                 Circle()
                                     .fill(.green)

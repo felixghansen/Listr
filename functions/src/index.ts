@@ -121,7 +121,7 @@ export const exchangeEbayCode = onCall(
         );
 
         await db.doc(`users/${uid}`).set(
-            { ebayConnected: true },
+            { isEbayConnected: true },
             { merge: true }
         );
 
@@ -167,7 +167,7 @@ export const getEbayAccessToken = onCall(
                 error.code === "invalid-argument"
             ) {
                 await db.doc(`users/${uid}`).set(
-                    { ebayConnected: false },
+                    { isEbayConnected: false },
                     { merge: true }
                 );
 

@@ -28,8 +28,12 @@ final class PostcardCollectionViewModel: ObservableObject {
         return postcardRepo.postcards.filter { $0.title.localizedCaseInsensitiveContains(searchText) }
     }
     
-    func loadPostcards() {
+    func startListening() {
         postcardRepo.listen(to: filter, sortedBy: sortOrder)
+    }
+
+    func stopListening() {
+        postcardRepo.stopListening()
     }
     
     func loadNextPage() {

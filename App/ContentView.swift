@@ -6,6 +6,8 @@ struct ContentView: View {
     // In order to redraw this view when postcards load
     @ObservedObject private var postcardRepo = PostcardRepository.shared
     @ObservedObject private var batchRepo = BatchRepository.shared
+    @ObservedObject private var userRepo = UserRepository.shared
+    
     @ObservedObject private var auth = AuthService.shared
     @StateObject private var controller = PostcardAnalysisController()
     
@@ -33,15 +35,21 @@ struct ContentView: View {
         }
         .animation(.snappy, value: controller.isAnalyzing)
         .onAppear {
+            userRepo.startListening()
             batchRepo.startListening()
-            viewModel.loadPostcards()
+            viewModel.startListening()
+        }
+        .onDisappear {
+            userRepo.stopListening()
+            batchRepo.stopListening()
+            viewModel.stopListening()
         }
         .onChange(of: viewModel.filter) {
             viewModel.selectedPostcards = []
-            viewModel.loadPostcards()
+            viewModel.startListening()
         }
         .onChange(of: viewModel.sortOrder) {
-            viewModel.loadPostcards()
+            viewModel.startListening()
         }
         .onDeleteCommand {
             requestDelete(viewModel.selectedPostcards)
