@@ -38,15 +38,7 @@ final class EbayAuthService: ObservableObject {
     @Published private(set) var isConnected = false
     private var pendingState: String?
 
-    // TODO: switch to production host, client ID and RuName
-    private let authorizeURL = "https://auth.sandbox.ebay.com/oauth2/authorize"
-    private let clientID = "FelixHan-Listr-SBX-81d2ad8ad-beecadaf"
-    private let ruName = "Felix_Hansen-FelixHan-Listr--cueveor"
-    private let scopes = [
-        "https://api.ebay.com/oauth/api_scope",
-        "https://api.ebay.com/oauth/api_scope/sell.inventory",
-        "https://api.ebay.com/oauth/api_scope/sell.account"
-    ]
+    private let config = EbayConfig.current
 
     func connect(using session: WebAuthenticationSession) async throws {
         let state = UUID().uuidString
@@ -91,12 +83,12 @@ final class EbayAuthService: ObservableObject {
     }
 
     private func signInURL(state: String) -> URL {
-        var components = URLComponents(string: authorizeURL)!
+        var components = URLComponents(string: config.authorizeURL)!
         components.queryItems = [
             URLQueryItem(name: "response_type", value: "code"),
-            URLQueryItem(name: "client_id", value: clientID),
-            URLQueryItem(name: "redirect_uri", value: ruName),
-            URLQueryItem(name: "scope", value: scopes.joined(separator: " ")),
+            URLQueryItem(name: "client_id", value: config.clientID),
+            URLQueryItem(name: "redirect_uri", value: config.ruName),
+            URLQueryItem(name: "scope", value: config.scopes.joined(separator: " ")),
             URLQueryItem(name: "state", value: state)
         ]
         return components.url!

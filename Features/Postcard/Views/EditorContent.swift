@@ -10,7 +10,7 @@ import Flow
 
 struct EditorContent: View {
     let postcard: PostcardDetails
-    let onSave: (PostcardDetails) -> Void
+    let onSave: (PostcardDetails) async throws -> Void
     let onListEbay: () async throws -> Void
     let onUpdateEbay: () async throws -> Void
 
@@ -45,7 +45,7 @@ struct EditorContent: View {
     @ViewBuilder
     private var viewOnEbayButton: some View {
         if let listingId = postcard.ebayListingId,
-           let url = URL(string: "https://sandbox.ebay.com/itm/\(listingId)") {
+           let url = EbayConfig.current.listingURL(for: listingId) {
             Button("View on eBay") {
                 openURL(url)
             }
@@ -54,7 +54,7 @@ struct EditorContent: View {
 
     init(
         postcard: PostcardDetails,
-        onSave: @escaping (PostcardDetails) -> Void,
+        onSave: @escaping (PostcardDetails) async throws -> Void,
         onListEbay: @escaping () async throws -> Void,
         onUpdateEbay: @escaping () async throws -> Void
     ) {
@@ -128,11 +128,14 @@ struct EditorContent: View {
                 HStack {
                     if postcard.status != .sold {
                         Button("Save") {
-                            let updated = editor.commitAndReset()
+                            let updated = editor.apply(to: postcard)
                             
                             Task {
-                                try await PostcardRepository.shared.updatePostcard(updated)
-                                onSave(updated)
+                                do {
+                                    try await onSave(updated)
+                                } catch {
+                                    showError("Couldn't save postcard", error)
+                                }
                             }
                         }
                         .buttonStyle(.borderedProminent)
@@ -528,11 +531,6 @@ struct KeywordDropDelegate: DropDelegate {
     }
 }
 
-enum EbayPostcardCategory {
-    static let topographical = 262042
-    static let nonTopographical = 262043
-}
-
 struct ListingSection: View {
     @Binding var ebayCategoryID: Int
     @Binding var price: Double
@@ -591,7 +589,7 @@ struct ListingSection: View {
         }
         .onAppear {
             // Older postcards may have an AI-guessed ID that isn't one of the two valid categories.
-            if ebayCategoryID != EbayPostcardCategory.topographical && ebayCategoryID != EbayPostcardCategory.nonTopographical {
+            if !EbayPostcardCategory.isValid(ebayCategoryID) {
                 ebayCategoryID = EbayPostcardCategory.topographical
             }
         }

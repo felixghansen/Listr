@@ -116,8 +116,3 @@ struct AccountSignInAndRegistration: View {
         }
     }
 }
-
-#Preview {
-    AccountSignInAndRegistration()
-        .environmentObject(AuthViewModel())
-}

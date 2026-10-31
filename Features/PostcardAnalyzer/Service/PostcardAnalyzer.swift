@@ -176,7 +176,7 @@ struct PostcardAnalyzer {
         Postmark city and state, or city and country, or "Unposted".
 
         10. ebayCategoryID
-        262042 (Topographical) if the card mainly shows a real, identifiable place; 262043 (Non-Topographical) for everything else. For cards with crossover appeal, pick the category whose collectors would be more interested in this specific card.
+        \(EbayPostcardCategory.topographical) (Topographical) if the card mainly shows a real, identifiable place; \(EbayPostcardCategory.nonTopographical) (Non-Topographical) for everything else. For cards with crossover appeal, pick the category whose collectors would be more interested in this specific card.
 
         11. suggestedPrice
         Price in US dollars (USD). Estimate based on typical market values for similar cards, using these ranges as anchors:

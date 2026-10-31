@@ -7,8 +7,7 @@ struct PostcardGallery: View {
     let onSelect: (PostcardSummary) -> Void
     let onDelete: (PostcardSummary) -> Void
     let clearSelection: () -> Void
-    
-    private let postcardRepo = PostcardRepository.shared
+    let onReachEnd: () -> Void
     
     @State private var cardWidth: CGFloat = 175
     private let gap: CGFloat = 20
@@ -44,10 +43,8 @@ struct PostcardGallery: View {
                         }
                         .onTapGesture { onSelect(postcard) }
                         .onAppear {
-                            Task {
-                                if postcard.id == postcards.last?.id {
-                                    try await postcardRepo.loadNextPage()
-                                }
+                            if postcard.id == postcards.last?.id {
+                                onReachEnd()
                             }
                         }
                     }

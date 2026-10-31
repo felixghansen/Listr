@@ -7,23 +7,14 @@
 
 import Foundation
 import FirebaseFirestore
-import FirebaseAuth
 
 @MainActor
 final class BatchRepository: ObservableObject {
     static let shared = BatchRepository()
     private init() {}
     
-    private let db = Firestore.firestore()
-    private var userID: String? {
-        Auth.auth().currentUser?.uid
-    }
-    
-    var batchesCollection: CollectionReference {
-        guard let userID = userID else {
-            fatalError("BatchRepository accessed without authentication")
-        }
-        return db.collection("users").document(userID).collection("batches")
+    private var batchesCollection: CollectionReference {
+        FirestorePaths.batches()
     }
     
     @Published private(set) var batches: [PostcardBatch] = []
@@ -54,6 +45,14 @@ final class BatchRepository: ObservableObject {
     
     func createNewBatchID() -> String {
         UUID().uuidString
+    }
+    
+    func addPostcards(_ postcardIDs: [String], toBatch batchID: String) async throws {
+        try await batchesCollection.document(batchID).setData([
+            "scannedAt": Timestamp(date: Date()),
+            "count": FieldValue.increment(Int64(postcardIDs.count)),
+            "postcardIDs": FieldValue.arrayUnion(postcardIDs)
+        ], merge: true)
     }
     
     func deleteBatch(_ batchID: String) async throws {

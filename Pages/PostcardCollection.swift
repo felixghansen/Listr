@@ -25,9 +25,20 @@ struct PostcardCollection: View {
             isSelected: { selectedIDs.contains($0.id) },
             onSelect: handleSelection,
             onDelete: handleDelete,
-            clearSelection: { selectedPostcards = [] }
+            clearSelection: { selectedPostcards = [] },
+            onReachEnd: loadNextPage
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+    
+    private func loadNextPage() {
+        Task {
+            do {
+                try await postcardRepo.loadNextPage()
+            } catch {
+                print("Failed to load more postcards: \(error)")
+            }
+        }
     }
     
     private func handleDelete(_ clicked: PostcardSummary) {
@@ -39,7 +50,7 @@ struct PostcardCollection: View {
                     let details = try await postcardRepo.details(for: clicked.id)
                     onDelete([details])
                 } catch {
-                    print("Failed to laod postcard details: \(error)")
+                    print("Failed to load postcard details: \(error)")
                 }
             }
         }

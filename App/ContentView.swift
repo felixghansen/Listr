@@ -7,10 +7,7 @@ struct ContentView: View {
     @ObservedObject private var batchRepo = BatchRepository.shared
     @ObservedObject private var auth = AuthService.shared
     @StateObject private var controller = PostcardAnalysisController()
-    private let client = EbayClient(
-        baseURL: "https://api.sandbox.ebay.com",
-        token: ProcessInfo.processInfo.environment["EBAY_SANDBOX_TOKEN"] ?? ""
-    )
+    private let client = EbayClient(tokenProvider: EnvironmentTokenProvider())
 
     @State private var filter: PostcardFilter = .all
     @State private var sortOrder = PostcardSortOrder()
@@ -53,7 +50,8 @@ struct ContentView: View {
                 }
                 .inspector(isPresented: $showInspector) {
                     PostcardInspector(
-                        selectedPostcards: $selectedPostcards,
+                        selectedPostcards: selectedPostcards,
+                        onSave: savePostcard,
                         onListEbay: onListEbay,
                         onUpdateEbay: onUpdateEbay
                     )
@@ -98,7 +96,7 @@ struct ContentView: View {
             let listedCount = postcardsToDelete.filter { $0.status == .listed }.count
             
             if listedCount > 0 {
-                Text("\(listedCount) of these postcards are listed on eBay. Their listings will be deleted.\n This can't be undone")
+                Text("\(listedCount) of these postcards are listed on eBay. Their listings will be ended.\nThis can't be undone.")
             } else {
                 Text("This can't be undone.")
             }
@@ -141,6 +139,17 @@ struct ContentView: View {
         }
     }
     
+    private func savePostcard(_ postcard: PostcardDetails) async throws {
+        try await postcardRepo.updatePostcard(postcard)
+        replaceInSelection(postcard)
+    }
+    
+    private func replaceInSelection(_ postcard: PostcardDetails) {
+        if let index = selectedPostcards.firstIndex(where: { $0.id == postcard.id }) {
+            selectedPostcards[index] = postcard
+        }
+    }
+    
     private func onUpdateEbay() async throws {
         guard let postcard = selectedPostcards.first else { return }
         try await client.updateListing(postcard)
@@ -152,11 +161,8 @@ struct ContentView: View {
         var updatedPostcard = postcard
         updatedPostcard.markListed(listingId: listingId)
         
-        if let index = selectedPostcards.firstIndex(where: { $0.id == updatedPostcard.id }) {
-            selectedPostcards[index] = updatedPostcard
-        }
-        
         try await postcardRepo.updatePostcard(updatedPostcard)
+        replaceInSelection(updatedPostcard)
     }
     
     private func onListEbay() async throws {

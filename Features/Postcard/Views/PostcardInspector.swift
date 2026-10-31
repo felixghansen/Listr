@@ -1,7 +1,8 @@
 import SwiftUI
 
 struct PostcardInspector: View {
-    @Binding var selectedPostcards: [PostcardDetails]
+    let selectedPostcards: [PostcardDetails]
+    var onSave: (PostcardDetails) async throws -> Void
     var onListEbay: () async throws -> Void
     var onUpdateEbay: () async throws -> Void
     
@@ -10,11 +11,7 @@ struct PostcardInspector: View {
             if selectedPostcards.count == 1, let selected = selectedPostcards.first {
                 EditorContent(
                     postcard: selected,
-                    onSave: { updated in
-                        if let idx = selectedPostcards.firstIndex(where: { $0.id == updated.id }) {
-                            selectedPostcards[idx] = updated
-                        }
-                    },
+                    onSave: onSave,
                     onListEbay: onListEbay,
                     onUpdateEbay: onUpdateEbay
                 )

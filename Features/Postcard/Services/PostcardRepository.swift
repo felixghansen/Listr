@@ -1,7 +1,5 @@
 import Foundation
 import FirebaseFirestore
-import FirebaseStorage
-import FirebaseAuth
 
 @MainActor
 final class PostcardRepository: ObservableObject {
@@ -20,11 +18,8 @@ final class PostcardRepository: ObservableObject {
     private var lastDocument: DocumentSnapshot?
     private var detailsCache: [String: PostcardDetails] = [:]
 
-    var postcardsCollection: CollectionReference {
-        guard let userID = Auth.auth().currentUser?.uid else {
-            fatalError("PostcardRepository accessed without authentication")
-        }
-        return db.collection("users").document(userID).collection("postcards")
+    private var postcardsCollection: CollectionReference {
+        FirestorePaths.postcards()
     }
 
     // MARK: - Loading
@@ -102,12 +97,7 @@ final class PostcardRepository: ObservableObject {
             postcardIDs.append(document.documentID)
         }
 
-        // Must match the PostcardBatch model
-        try await BatchRepository.shared.batchesCollection.document(batchID).setData([
-            "scannedAt": Timestamp(date: Date()),
-            "count": FieldValue.increment(Int64(newPostcards.count)),
-            "postcardIDs": FieldValue.arrayUnion(postcardIDs)
-        ], merge: true)
+        try await BatchRepository.shared.addPostcards(postcardIDs, toBatch: batchID)
     }
 
     func updatePostcard(_ postcard: PostcardDetails) async throws {
@@ -149,15 +139,10 @@ final class PostcardRepository: ObservableObject {
     // MARK: - Helpers
     
     private func deleteImages(for postcards: [PostcardDetails]) async {
-        let urls = postcards.flatMap { [$0.frontImageURLString, $0.backImageURLString ]}
-        
-        await withTaskGroup(of: Void.self) { group in
-            for url in urls {
-                group.addTask {
-                    try? await Storage.storage().reference(forURL: url).delete()
-                }
-            }
+        let urls = postcards.flatMap {
+            [$0.frontImageThumbnailURLString, $0.frontImageURLString, $0.backImageURLString]
         }
+        await StorageManager.shared.deleteImages(at: urls)
     }
 
     private func makeQuery(for filter: PostcardFilter, sortedBy sortOrder: PostcardSortOrder) -> Query {
