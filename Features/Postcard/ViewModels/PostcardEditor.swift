@@ -27,8 +27,8 @@ final class PostcardEditor: ObservableObject {
         draft = postcard.aiData
     }
     
-    func commitAndReset() -> PostcardDetails {
-        var updated = original
+    func apply(to postcard: PostcardDetails) -> PostcardDetails {
+        var updated = postcard
         updated.update(aiData: draft)
         reset(with: updated)
         return updated
