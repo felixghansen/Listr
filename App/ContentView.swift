@@ -10,7 +10,7 @@ struct ContentView: View {
     @StateObject private var controller = PostcardAnalysisController()
     
     @StateObject private var viewModel = PostcardCollectionViewModel(
-        ebayClient: EbayClient(tokenProvider: EnvironmentTokenProvider())
+        ebayClient: EbayClient(tokenProvider: CloudFunctionTokenProvider())
     )
 
     @State private var showInspector = true
