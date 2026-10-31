@@ -11,8 +11,8 @@ import Flow
 struct EditorContent: View {
     let postcard: PostcardDetails
     let onSave: (PostcardDetails) async throws -> Void
-    let onListEbay: () async throws -> Void
-    let onUpdateEbay: () async throws -> Void
+    let onListEbay: (PostcardDetails) async throws -> Void
+    let onUpdateEbay: (PostcardDetails) async throws -> Void
 
     @Environment(\.openURL) private var openURL
     
@@ -55,8 +55,8 @@ struct EditorContent: View {
     init(
         postcard: PostcardDetails,
         onSave: @escaping (PostcardDetails) async throws -> Void,
-        onListEbay: @escaping () async throws -> Void,
-        onUpdateEbay: @escaping () async throws -> Void
+        onListEbay: @escaping (PostcardDetails) async throws -> Void,
+        onUpdateEbay: @escaping (PostcardDetails) async throws -> Void
     ) {
         self.postcard = postcard
         self.onSave = onSave
@@ -152,7 +152,7 @@ struct EditorContent: View {
                                 isListing = true
                                 
                                 do {
-                                    try await onListEbay()
+                                    try await onListEbay(postcard)
                                 } catch {
                                     showError("Couldn't list on eBay", error)
                                 }
@@ -178,7 +178,7 @@ struct EditorContent: View {
                                 isUpdating = true
                                 
                                 do {
-                                    try await onUpdateEbay()
+                                    try await onUpdateEbay(postcard)
                                 } catch {
                                     showError("Couldn't update on eBay", error)
                                 }
@@ -206,9 +206,6 @@ struct EditorContent: View {
                 }
             }
             .padding(padding)
-        }
-        .onChange(of: postcard.id) { _, _ in
-            editor.reset(with: postcard)
         }
         .alert(errorTitle, isPresented: showErrorMessage) {
             Button("OK", role: .cancel) {}

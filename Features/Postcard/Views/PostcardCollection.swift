@@ -11,6 +11,7 @@ struct PostcardCollection: View {
     let postcards: [PostcardSummary]
     @Binding var selectedPostcards: [PostcardDetails]
     let onDelete: ([PostcardDetails]) -> Void
+    let onReachEnd: () -> Void
 
     private let postcardRepo = PostcardRepository.shared
     @State private var loadingIDs: Set<String> = []
@@ -26,21 +27,11 @@ struct PostcardCollection: View {
             onSelect: handleSelection,
             onDelete: handleDelete,
             clearSelection: { selectedPostcards = [] },
-            onReachEnd: loadNextPage
+            onReachEnd: onReachEnd
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
-    
-    private func loadNextPage() {
-        Task {
-            do {
-                try await postcardRepo.loadNextPage()
-            } catch {
-                print("Failed to load more postcards: \(error)")
-            }
-        }
-    }
-    
+
     private func handleDelete(_ clicked: PostcardSummary) {
         if selectedIDs.contains(clicked.id) {
             onDelete(selectedPostcards)

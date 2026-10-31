@@ -3,8 +3,8 @@ import SwiftUI
 struct PostcardInspector: View {
     let selectedPostcards: [PostcardDetails]
     var onSave: (PostcardDetails) async throws -> Void
-    var onListEbay: () async throws -> Void
-    var onUpdateEbay: () async throws -> Void
+    var onListEbay: (PostcardDetails) async throws -> Void
+    var onUpdateEbay: (PostcardDetails) async throws -> Void
     
     var body: some View {
         Group {

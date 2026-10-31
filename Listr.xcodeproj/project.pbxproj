@@ -49,11 +49,6 @@
 			path = App;
 			sourceTree = "<group>";
 		};
-		DCDE6B502EA056A3009B580F /* Pages */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Pages;
-			sourceTree = "<group>";
-		};
 		DCDE6B512EA056A7009B580F /* Features */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Features;
@@ -112,7 +107,6 @@
 				DCDE6B7B2EA1B22E009B580F /* Resources */,
 				DCDE6B522EA056B1009B580F /* Core */,
 				DCDE6B512EA056A7009B580F /* Features */,
-				DCDE6B502EA056A3009B580F /* Pages */,
 				DCDE6B4D2EA05686009B580F /* App */,
 				DCDE6B832EA55893009B580F /* Listr.app */,
 				DCDE6B842EA55893009B580F /* ListrTests.xctest */,
@@ -145,7 +139,6 @@
 			);
 			fileSystemSynchronizedGroups = (
 				DCDE6B4D2EA05686009B580F /* App */,
-				DCDE6B502EA056A3009B580F /* Pages */,
 				DCDE6B512EA056A7009B580F /* Features */,
 				DCDE6B522EA056B1009B580F /* Core */,
 				DCDE6B7B2EA1B22E009B580F /* Resources */,
