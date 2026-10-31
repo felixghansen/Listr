@@ -34,7 +34,7 @@ final class PostcardRepository: ObservableObject {
         let query = makeQuery(for: filter, sortedBy: sortOrder)
         currentQuery = query
         
-        listener = query.limit(to: pageSize).addSnapshotListener { [weak self] (snapshot: QuerySnapshot?, error: Error?) in
+        listener = query.limit(to: pageSize).addSnapshotListener { [weak self] snapshot, error in
             guard let snapshot = snapshot else { return }
             let details = snapshot.documents.compactMap { try? $0.data(as: PostcardDetails.self) }
 
