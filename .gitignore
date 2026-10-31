@@ -1,3 +1,22 @@
-**/GoogleService-Info.plist
+# macOS
+.DS_Store
+
+# Xcode
 xcuserdata/
+DerivedData/
+*.xcuserstate
+
+# Firebase
 .firebase/
+firebase-debug.log
+firestore-debug.log
+**/GoogleService-Info.plist
+
+# Cloud Functions
+functions/node_modules/
+functions/lib/
+
+# Secrets
+.env
+*.env
+.runtimeconfig.json
