@@ -111,16 +111,6 @@ final class PostcardRepository: ObservableObject {
         }
     }
 
-    func deletePostcard(_ postcard: PostcardDetails) async throws {
-        guard let id = postcard.id else { return }
-
-        try await postcardsCollection.document(id).delete()
-        removeFromCache(ids: [id])
-
-        try await BatchRepository.shared.deletePostcard(postcard)
-        await deleteImages(for: [postcard])
-    }
-
     func deletePostcards(_ postcards: [PostcardDetails]) async throws {
         let ids = postcards.compactMap(\.id)
         

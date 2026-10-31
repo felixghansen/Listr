@@ -61,27 +61,6 @@ final class BatchRepository: ObservableObject {
             .delete()
     }
     
-    func deletePostcard(_ postcard: PostcardDetails) async throws {
-        let batchRef = batchesCollection.document(postcard.batchID)
-
-        try await batchRef.updateData([
-            "postcardIDs": FieldValue.arrayRemove([postcard.id!]),
-            "count": FieldValue.increment(Int64(-1))
-        ])
-
-        let snapshot = try await batchRef.getDocument()
-        guard let data = snapshot.data() else { return }
-
-        if let count = data["count"] as? Int, count <= 0 {
-            try await batchRef.delete()
-            return
-        }
-
-        if let ids = data["postcardIDs"] as? [String], ids.isEmpty {
-            try await batchRef.delete()
-        }
-    }
-    
     func deletePostcards(_ postcards: [PostcardDetails]) async {
         let groups = Dictionary(grouping: postcards, by: { $0.batchID })
         
