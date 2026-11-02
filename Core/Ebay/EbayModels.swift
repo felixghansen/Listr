@@ -163,3 +163,35 @@ struct EbayOffersResponse: Decodable {
 struct EbayPublishResponse: Decodable {
     let listingId: String
 }
+
+struct FulfillmentPoliciesResponse: Decodable {
+    let fulfillmentPolicies: [FulfillmentPolicy]
+}
+
+struct FulfillmentPolicy: Decodable {
+    let fulfillmentPolicyId: String
+    let name: String
+}
+
+struct PaymentPoliciesResponse: Decodable {
+    let paymentPolicies: [PaymentPolicy]
+}
+
+struct PaymentPolicy: Decodable {
+    let paymentPolicyId: String
+    let name: String
+}
+
+struct ReturnPoliciesResponse: Decodable {
+    let returnPolicies: [ReturnPolicy]
+}
+
+struct ReturnPolicy: Decodable {
+    let returnPolicyId: String
+    let name: String
+}
+
+struct EbayPolicy: Identifiable, Hashable {
+    let id: String
+    let name: String
+}

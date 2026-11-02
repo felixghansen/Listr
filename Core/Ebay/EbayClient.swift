@@ -7,7 +7,6 @@
 
 import Foundation
 
-/// Talks to eBay's Inventory API. Knows nothing about Firestore or the UI.
 struct EbayClient {
     let config: EbayConfig
     let tokenProvider: any EbayTokenProvider
@@ -39,6 +38,36 @@ struct EbayClient {
         } catch let error as EbayError where error.errors.contains(where: { $0.errorId == 25710 }) {
             // Already gone on eBay, so there's nothing to delete.
         }
+    }
+    
+    func getFulfillmentPolicies() async throws -> [EbayPolicy] {
+        let data = try await fetchData(
+            path: "/sell/account/v1/fulfillment_policy?marketplace_id=\(config.marketplaceID)",
+            method: "GET"
+        )
+        
+        let response = try JSONDecoder().decode(FulfillmentPoliciesResponse.self, from: data)
+        return response.fulfillmentPolicies.map { EbayPolicy(id: $0.fulfillmentPolicyId, name: $0.name) }
+    }
+    
+    func getPaymentPolicies() async throws -> [EbayPolicy] {
+        let data = try await fetchData(
+            path: "/sell/account/v1/payment_policy?marketplace_id=\(config.marketplaceID)",
+            method: "GET"
+        )
+        
+        let response = try JSONDecoder().decode(PaymentPoliciesResponse.self, from: data)
+        return response.paymentPolicies.map { EbayPolicy(id: $0.paymentPolicyId, name: $0.name) }
+    }
+    
+    func getReturnPolicies() async throws -> [EbayPolicy] {
+        let data = try await fetchData(
+            path: "/sell/account/v1/return_policy?marketplace_id=\(config.marketplaceID)",
+            method: "GET"
+        )
+        
+        let response = try JSONDecoder().decode(ReturnPoliciesResponse.self, from: data)
+        return response.returnPolicies.map { EbayPolicy(id: $0.returnPolicyId, name: $0.name) }
     }
     
     private func createOrReplaceInventoryItem(_ postcard: PostcardDetails) async throws {
