@@ -20,7 +20,10 @@ struct ContentView: View {
     
     @State private var postcardsToDelete: [PostcardDetails] = []
     @State private var showDeleteConfirmation = false
-
+    
+    @State private var showDeleteError = false
+    @State private var errorMessage: String?
+    
     var body: some View {
         NavigationSplitView {
             sidebar
@@ -63,7 +66,8 @@ struct ContentView: View {
                     do {
                         try await viewModel.deletePostcards(postcardsToDelete)
                     } catch {
-                        print("Error deleting postcards: \(error.localizedDescription)")
+                        errorMessage = error.localizedDescription
+                        showDeleteError = true
                     }
                 }
             }
@@ -75,6 +79,11 @@ struct ContentView: View {
             } else {
                 Text("This can't be undone.")
             }
+        }
+        .alert("Couldn't Delete Some Postcards", isPresented: $showDeleteError) {
+            Button("OK", role: .destructive) {}
+        } message: {
+            Text(errorMessage ?? "")
         }
     }
     
