@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PostcardInspector: View {
     let selectedPostcards: [PostcardDetails]
+    let isEbayConnected: Bool
     var onSave: (PostcardDetails) async throws -> Void
     var onListEbay: (PostcardDetails) async throws -> Void
     var onUpdateEbay: (PostcardDetails) async throws -> Void
@@ -11,6 +12,7 @@ struct PostcardInspector: View {
             if selectedPostcards.count == 1, let selected = selectedPostcards.first {
                 EditorContent(
                     postcard: selected,
+                    isEbayConnected: isEbayConnected,
                     onSave: onSave,
                     onListEbay: onListEbay,
                     onUpdateEbay: onUpdateEbay
