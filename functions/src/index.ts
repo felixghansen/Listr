@@ -1,5 +1,5 @@
 import { logger } from "firebase-functions";
-import { onCall, HttpsError } from "firebase-functions/https";
+import { onCall, HttpsError, CallableRequest } from "firebase-functions/https";
 import { defineSecret } from "firebase-functions/params";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
@@ -71,17 +71,17 @@ const requestEbayToken = async (body: URLSearchParams) => {
     return response;
 };
 
+const requireUid = (req: CallableRequest): string => {
+    if (!req.auth) {
+        throw new HttpsError("unauthenticated", "You need to be signed in.");
+    }
+    return req.auth.uid;
+};
+
 export const exchangeEbayCode = onCall(
     { secrets: [ebayClientSecret] },
     async (req) => {
-        if (!req.auth) {
-            throw new HttpsError(
-                "unauthenticated",
-                "You must be signed in to connect to eBay."
-            );
-        }
-
-        const uid = req.auth.uid;
+        const uid = requireUid(req);
         const code = req.data.code;
 
         if (typeof code !== "string" || code.length === 0) {
@@ -132,14 +132,7 @@ export const exchangeEbayCode = onCall(
 export const getEbayAccessToken = onCall(
     { secrets: [ebayClientSecret] },
     async (req) => {
-        if (!req.auth) {
-            throw new HttpsError(
-                "unauthenticated",
-                "You must be signed in to connect to eBay."
-            );
-        }
-
-        const uid = req.auth.uid;
+        const uid = requireUid(req);
 
         const snapshot = await db.doc(`users/${uid}/private/ebay`).get();
         const refreshToken = snapshot.get("refreshToken");
@@ -198,5 +191,36 @@ export const getEbayAccessToken = onCall(
         const accessTokenExpiresAt = Date.now() + expiresInMs;
 
         return { accessToken, accessTokenExpiresAt };
+    }
+);
+
+export const disconnectEbay = onCall(
+    async (req) => {
+        const uid = requireUid(req);
+        const userPath = `users/${uid}`;
+
+        const batch = db.batch();
+
+        batch.delete(
+            db.doc(`${userPath}/private/ebay`)
+        );
+
+        batch.set(
+            db.doc(userPath),
+            { isEbayConnected: false },
+            { merge: true }
+        );
+
+        try {
+            await batch.commit();
+        } catch (error) {
+            logger.error("Couldn't disconnect eBay", { uid, error });
+            throw new HttpsError(
+                "internal",
+                "Couldn't disconnect your eBay account. Please try again."
+            );
+        }
+
+        return { success: true };
     }
 );

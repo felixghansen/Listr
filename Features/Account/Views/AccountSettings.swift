@@ -11,8 +11,12 @@ struct AccountSettings: View {
     @Environment(\.webAuthenticationSession) private var webAuthenticationSession
 
     @State private var isConnecting = false
+    @State private var isDisconnecting = false
+    
     @State private var errorMessage = ""
+    @State private var errorTitle = ""
     @State private var showAlert = false
+    
     @State private var connectTask: Task<Void, Never>?
 
     var body: some View {
@@ -23,17 +27,28 @@ struct AccountSettings: View {
                 }
 
                 Section {
-                    LabeledContent("eBay Account") {
-                        if userRepo.isEbayConnected {
-                            HStack(spacing: 6) {
+                    LabeledContent("Status") {
+                        if isDisconnecting {
+                            HStack {
+                                ProgressView()
+                                    .controlSize(.small)
+                                Text("Disconnecting…")
+                                    .foregroundStyle(.secondary)
+                            }
+                        } else if userRepo.isEbayConnected {
+                            HStack {
                                 Circle()
                                     .fill(.green)
                                     .frame(width: 8, height: 8)
                                 Text("Connected")
                                     .foregroundStyle(.secondary)
+                                Button("Disconnect") {
+                                    disconnectEbay()
+                                }
+                                .controlSize(.small)
                             }
                         } else if isConnecting {
-                            HStack(spacing: 8) {
+                            HStack {
                                 ProgressView()
                                     .controlSize(.small)
                                 Button("Cancel") {
@@ -44,12 +59,17 @@ struct AccountSettings: View {
                             Button("Connect…") {
                                 connectEbay()
                             }
+                            .controlSize(.small)
                         }
                     }
                 } header: {
                     Text("eBay")
                 } footer: {
-                    Text("Connect your eBay account so Listr can list postcards for you.")
+                    if userRepo.isEbayConnected {
+                        Text("Listr can list and update postcards on your eBay account. Disconnecting won’t end your existing listings.")
+                    } else {
+                        Text("Connect your eBay account so Listr can list postcards for you.")
+                    }
                 }
             }
             .formStyle(.grouped)
@@ -67,7 +87,7 @@ struct AccountSettings: View {
             .padding(20)
         }
         .frame(width: 440)
-        .alert("Couldn't Connect to eBay", isPresented: $showAlert) {
+        .alert(errorTitle, isPresented: $showAlert) {
             Button("OK", role: .cancel) {}
         } message: {
             Text(errorMessage)
@@ -81,6 +101,11 @@ struct AccountSettings: View {
         isConnecting = true
 
         connectTask = Task {
+            defer {
+                isConnecting = false
+                connectTask = nil
+            }
+            
             do {
                 try await ebayAuthService.connect(using: webAuthenticationSession)
             } catch ASWebAuthenticationSessionError.canceledLogin {
@@ -89,11 +114,27 @@ struct AccountSettings: View {
                 // User clicked Cancel, not an error.
             } catch {
                 errorMessage = error.localizedDescription
+                errorTitle = "Couldn't Connect to eBay"
                 showAlert = true
             }
-
-            isConnecting = false
-            connectTask = nil
+        }
+    }
+    
+    private func disconnectEbay() {
+        isDisconnecting = true
+        
+        Task {
+            defer {
+                isDisconnecting = false
+            }
+            
+            do {
+                try await ebayAuthService.disconnect()
+            } catch {
+                errorMessage = error.localizedDescription
+                errorTitle = "Couldn't Disconnect eBay"
+                showAlert = true
+            }
         }
     }
 }

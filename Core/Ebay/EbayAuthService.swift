@@ -74,8 +74,14 @@ final class EbayAuthService: ObservableObject {
         }
     }
 
-    func disconnect() {
-        // TODO: delete the stored refresh token via a Cloud Function
+    func disconnect() async throws {
+        let result = try await functions
+            .httpsCallable("disconnectEbay")
+            .call()
+        
+        guard let data = result.data as? [String: Any], data["success"] as? Bool == true else {
+            throw EbayAuthError.unexpectedResponse
+        }
     }
 
     private func signInURL(state: String) -> URL {
