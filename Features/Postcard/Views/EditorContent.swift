@@ -25,22 +25,13 @@ struct EditorContent: View {
     @State private var isUpdating = false
     
     @State private var errorTitle = ""
-    @State private var errorMessage: String?
+    @State private var errorMessage = ""
+    @State private var isShowingError = false
 
     private func showError(_ title: String, _ error: Error) {
         errorTitle = title
         errorMessage = error.localizedDescription
-    }
-    
-    private var showErrorMessage: Binding<Bool> {
-        Binding(
-            get: { errorMessage != nil },
-            set: { isShowing in
-                if !isShowing {
-                    errorMessage = nil
-                }
-            }
-        )
+        isShowingError = true
     }
     
     @ViewBuilder
@@ -212,10 +203,10 @@ struct EditorContent: View {
             }
             .padding(padding)
         }
-        .alert(errorTitle, isPresented: showErrorMessage) {
+        .alert(errorTitle, isPresented: $isShowingError) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text(errorMessage ?? "")
+            Text(errorMessage)
         }
     }
 }

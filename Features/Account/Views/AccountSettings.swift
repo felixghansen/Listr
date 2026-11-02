@@ -13,9 +13,9 @@ struct AccountSettings: View {
     @State private var isConnecting = false
     @State private var isDisconnecting = false
     
-    @State private var errorMessage = ""
     @State private var errorTitle = ""
-    @State private var showAlert = false
+    @State private var errorMessage = ""
+    @State private var isShowingError = false
     
     @State private var connectTask: Task<Void, Never>?
 
@@ -87,7 +87,7 @@ struct AccountSettings: View {
             .padding(20)
         }
         .frame(width: 440)
-        .alert(errorTitle, isPresented: $showAlert) {
+        .alert(errorTitle, isPresented: $isShowingError) {
             Button("OK", role: .cancel) {}
         } message: {
             Text(errorMessage)
@@ -95,6 +95,12 @@ struct AccountSettings: View {
         .onDisappear {
             connectTask?.cancel()
         }
+    }
+
+    private func showError(_ title: String, _ error: Error) {
+        errorTitle = title
+        errorMessage = error.localizedDescription
+        isShowingError = true
     }
 
     private func connectEbay() {
@@ -113,9 +119,7 @@ struct AccountSettings: View {
             } catch is CancellationError {
                 // User clicked Cancel, not an error.
             } catch {
-                errorMessage = error.localizedDescription
-                errorTitle = "Couldn't Connect to eBay"
-                showAlert = true
+                showError("Couldn't Connect to eBay", error)
             }
         }
     }
@@ -131,9 +135,7 @@ struct AccountSettings: View {
             do {
                 try await ebayAuthService.disconnect()
             } catch {
-                errorMessage = error.localizedDescription
-                errorTitle = "Couldn't Disconnect eBay"
-                showAlert = true
+                showError("Couldn't Disconnect eBay", error)
             }
         }
     }

@@ -19,10 +19,11 @@ struct ContentView: View {
     @State private var showEbaySheet = false
     
     @State private var postcardsToDelete: [PostcardDetails] = []
-    @State private var showDeleteConfirmation = false
+    @State private var isShowingDeleteConfirmation = false
     
-    @State private var showDeleteError = false
-    @State private var errorMessage: String?
+    @State private var errorTitle = ""
+    @State private var errorMessage = ""
+    @State private var isShowingError = false
     
     var body: some View {
         NavigationSplitView {
@@ -59,15 +60,14 @@ struct ContentView: View {
         }
         .confirmationDialog(
             postcardsToDelete.count == 1 ? "Delete this postcard?" : "Delete \(postcardsToDelete.count) postcards?",
-            isPresented: $showDeleteConfirmation
+            isPresented: $isShowingDeleteConfirmation
         ) {
             Button("Delete", role: .destructive) {
                 Task {
                     do {
                         try await viewModel.deletePostcards(postcardsToDelete)
                     } catch {
-                        errorMessage = error.localizedDescription
-                        showDeleteError = true
+                        showError("Couldn't Delete Some Postcards", error)
                     }
                 }
             }
@@ -80,10 +80,10 @@ struct ContentView: View {
                 Text("This can't be undone.")
             }
         }
-        .alert("Couldn't Delete Some Postcards", isPresented: $showDeleteError) {
-            Button("OK", role: .destructive) {}
+        .alert(errorTitle, isPresented: $isShowingError) {
+            Button("OK", role: .cancel) {}
         } message: {
-            Text(errorMessage ?? "")
+            Text(errorMessage)
         }
     }
     
@@ -148,8 +148,14 @@ struct ContentView: View {
     
     private func requestDelete(_ postcards: [PostcardDetails]) {
         guard !postcards.isEmpty else { return }
-        showDeleteConfirmation = true
+        isShowingDeleteConfirmation = true
         postcardsToDelete = postcards
+    }
+
+    private func showError(_ title: String, _ error: Error) {
+        errorTitle = title
+        errorMessage = error.localizedDescription
+        isShowingError = true
     }
 
     private var title: String {
