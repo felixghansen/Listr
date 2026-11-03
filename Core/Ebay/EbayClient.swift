@@ -70,6 +70,26 @@ struct EbayClient {
         return response.returnPolicies.map { EbayPolicy(id: $0.returnPolicyId, name: $0.name) }
     }
     
+    func getInventoryLocations() async throws -> [InventoryLocation] {
+        let data = try await fetchData(path: "/sell/inventory/v1/location", method: "GET")
+        
+        let response = try JSONDecoder().decode(InventoryLocationsResponse.self, from: data)
+        return response.locations
+    }
+    
+    func createInventoryLocation(postalCode: String) async throws -> String {
+        let key = "listr-\(UUID().uuidString.prefix(8).lowercased())"
+        let body = InventoryLocationRequest(
+            location: InventoryLocationDetails(
+                address: InventoryLocationAddress(postalCode: postalCode, country: config.countryCode)
+            ),
+            name: "Listr (\(postalCode))"
+        )
+        _ = try await fetchData(path: "/sell/inventory/v1/location/\(key)", method: "POST", body: body)
+        
+        return key
+    }
+    
     private func createOrReplaceInventoryItem(_ postcard: PostcardDetails) async throws {
         guard let id = postcard.id else {
             throw EbayClientError.missingPostcardID

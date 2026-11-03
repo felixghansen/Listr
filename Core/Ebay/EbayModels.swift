@@ -195,3 +195,30 @@ struct EbayPolicy: Identifiable, Hashable {
     let id: String
     let name: String
 }
+
+struct InventoryLocationsResponse: Decodable {
+    let locations: [InventoryLocation]
+}
+
+struct InventoryLocation: Decodable {
+    let location: InventoryLocationDetails
+    let merchantLocationKey: String
+    let merchantLocationStatus: String?
+    let name: String?
+}
+
+struct InventoryLocationDetails: Codable {
+    let address: InventoryLocationAddress
+}
+
+struct InventoryLocationAddress: Codable {
+    var postalCode: String?
+    var country: String?
+    var stateOrProvince: String?
+    var city: String?
+}
+
+struct InventoryLocationRequest: Encodable {
+    let location: InventoryLocationDetails
+    let name: String
+}

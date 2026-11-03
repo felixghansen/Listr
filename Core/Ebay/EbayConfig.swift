@@ -16,6 +16,7 @@ struct EbayConfig {
     let scopes: [String]
 
     let marketplaceID: String
+    let countryCode: String
     let currency: String
 
     // TODO: These belong to the Sandbox test seller. Real sellers each have their own,
@@ -41,6 +42,7 @@ struct EbayConfig {
             "https://api.ebay.com/oauth/api_scope/sell.account"
         ],
         marketplaceID: "EBAY_US",
+        countryCode: "US",
         currency: "USD",
         merchantLocationKey: "listr-test-location",
         fulfillmentPolicyID: "6258646000",
