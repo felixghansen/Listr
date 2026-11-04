@@ -30,17 +30,42 @@ enum EbayTokenError: LocalizedError {
 }
 
 actor CloudFunctionTokenProvider: EbayTokenProvider {
+    static let shared = CloudFunctionTokenProvider()
+    
     private var cachedToken: String?
     private var expiresAt: Date?
     
     private let functions = Functions.functions()
     private let refreshMargin: TimeInterval = 60
     
+    private var refreshTask: Task<String, Error>?
+    
     func accessToken() async throws -> String {
         if let cachedToken, let expiresAt, Date().addingTimeInterval(refreshMargin) < expiresAt {
             return cachedToken
         }
         
+        if let refreshTask {
+            return try await refreshTask.value
+        }
+        
+        let task = Task {
+            try await fetchToken()
+        }
+        
+        refreshTask = task
+        defer { refreshTask = nil }
+        
+        return try await task.value
+    }
+    
+    func reset() {
+        cachedToken = nil
+        expiresAt = nil
+        refreshTask = nil
+    }
+    
+    private func fetchToken() async throws -> String {
         let result = try await functions
             .httpsCallable("getEbayAccessToken")
             .call()

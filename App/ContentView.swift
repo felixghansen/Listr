@@ -12,7 +12,7 @@ struct ContentView: View {
     @StateObject private var controller = PostcardAnalysisController()
     
     @StateObject private var viewModel = PostcardCollectionViewModel(
-        ebayClient: EbayClient(tokenProvider: CloudFunctionTokenProvider())
+        ebayClient: EbayClient(tokenProvider: CloudFunctionTokenProvider.shared)
     )
 
     @State private var showInspector = true
@@ -47,6 +47,9 @@ struct ContentView: View {
             userRepo.stopListening()
             batchRepo.stopListening()
             viewModel.stopListening()
+            Task {
+                await CloudFunctionTokenProvider.shared.reset()
+            }
         }
         .onChange(of: viewModel.filter) {
             viewModel.selectedPostcards = []
