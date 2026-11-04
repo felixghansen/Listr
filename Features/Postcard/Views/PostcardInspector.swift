@@ -2,17 +2,17 @@ import SwiftUI
 
 struct PostcardInspector: View {
     let selectedPostcards: [PostcardDetails]
-    let isEbayConnected: Bool
-    var onSave: (PostcardDetails) async throws -> Void
-    var onListEbay: (PostcardDetails) async throws -> Void
-    var onUpdateEbay: (PostcardDetails) async throws -> Void
+    let ebayUnavailableReason: String?
+    let onSave: (PostcardDetails) async throws -> Void
+    let onListEbay: (PostcardDetails) async throws -> Void
+    let onUpdateEbay: (PostcardDetails) async throws -> Void
     
     var body: some View {
         Group {
             if selectedPostcards.count == 1, let selected = selectedPostcards.first {
                 EditorContent(
                     postcard: selected,
-                    isEbayConnected: isEbayConnected,
+                    ebayUnavailableReason: ebayUnavailableReason,
                     onSave: onSave,
                     onListEbay: onListEbay,
                     onUpdateEbay: onUpdateEbay

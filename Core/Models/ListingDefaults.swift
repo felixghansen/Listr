@@ -13,3 +13,14 @@ struct ListingDefaults: Codable, Equatable {
     var returnPolicyID: String?
     var merchantLocationKey: String?
 }
+
+extension ListingDefaults {
+    var isComplete: Bool {
+        return (
+            fulfillmentPolicyID != nil &&
+            paymentPolicyID != nil &&
+            returnPolicyID != nil &&
+            merchantLocationKey != nil
+        )
+    }
+}

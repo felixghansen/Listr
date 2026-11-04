@@ -34,6 +34,7 @@ extension EbayError: LocalizedError {
 enum EbayClientError: Error {
     case missingPostcardID
     case offerNotFound
+    case missingListingDefaults
 }
 
 extension EbayClientError: LocalizedError {
@@ -43,6 +44,8 @@ extension EbayClientError: LocalizedError {
             return "This postcard hasn't been saved yet. Try again in a moment."
         case .offerNotFound:
             return "Couldn't find this postcard's existing eBay offer."
+        case .missingListingDefaults:
+            return "Choose your shipping, payment, return and location defaults in Account Settings."
         }
     }
 }
@@ -129,13 +132,21 @@ struct EbayOffer: Encodable {
 }
 
 extension EbayOffer {
-    init(postcard: PostcardDetails, sku: String, config: EbayConfig) {
+    init(postcard: PostcardDetails, sku: String, config: EbayConfig, defaults: ListingDefaults) throws {
+        guard let fulfillmentPolicyID = defaults.fulfillmentPolicyID,
+              let paymentPolicyID = defaults.paymentPolicyID,
+              let returnPolicyID = defaults.returnPolicyID,
+              let merchantLocationKey = defaults.merchantLocationKey
+        else {
+            throw EbayClientError.missingListingDefaults
+        }
+        
         self.sku = sku
         marketplaceId = config.marketplaceID
         format = "FIXED_PRICE"
         availableQuantity = 1
         categoryId = String(postcard.aiData.ebayCategoryID)
-        merchantLocationKey = config.merchantLocationKey
+        self.merchantLocationKey = merchantLocationKey
         
         pricingSummary = PricingSummary(
             price: PricingSummary.Price(
@@ -145,9 +156,9 @@ extension EbayOffer {
         )
         
         listingPolicies = ListingPolicies(
-            fulfillmentPolicyId: config.fulfillmentPolicyID,
-            paymentPolicyId: config.paymentPolicyID,
-            returnPolicyId: config.returnPolicyID
+            fulfillmentPolicyId: fulfillmentPolicyID,
+            paymentPolicyId: paymentPolicyID,
+            returnPolicyId: returnPolicyID
         )
     }
 }

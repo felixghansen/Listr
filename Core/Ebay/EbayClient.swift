@@ -16,17 +16,17 @@ struct EbayClient {
         self.tokenProvider = tokenProvider
     }
     
-    func createListing(_ postcard: PostcardDetails) async throws -> String {
+    func createListing(_ postcard: PostcardDetails, defaults: ListingDefaults) async throws -> String {
         try await createOrReplaceInventoryItem(postcard)
-        let offerId = try await createOffer(postcard)
+        let offerId = try await createOffer(postcard, defaults: defaults)
         let listingId = try await publishOffer(offerId: offerId)
         
         return listingId
     }
     
-    func updateListing(_ postcard: PostcardDetails) async throws {
+    func updateListing(_ postcard: PostcardDetails, defaults: ListingDefaults) async throws {
         try await createOrReplaceInventoryItem(postcard)
-        let _ = try await createOffer(postcard) // the createOffer function handles existing offers, in which case it updates them
+        _ = try await createOffer(postcard, defaults: defaults) // the createOffer function handles existing offers, in which case it updates them
     }
     
     func deleteListing(_ postcard: PostcardDetails) async throws {
@@ -98,12 +98,12 @@ struct EbayClient {
         _ = try await fetchData(path: "/sell/inventory/v1/inventory_item/\(id)", method: "PUT", body: item)
     }
     
-    private func createOffer(_ postcard: PostcardDetails) async throws -> String {
+    private func createOffer(_ postcard: PostcardDetails, defaults: ListingDefaults) async throws -> String {
         guard let id = postcard.id else {
             throw EbayClientError.missingPostcardID
         }
         
-        let offer = EbayOffer(postcard: postcard, sku: id, config: config)
+        let offer = try EbayOffer(postcard: postcard, sku: id, config: config, defaults: defaults)
         
         do {
             let data = try await fetchData(path: "/sell/inventory/v1/offer", method: "POST", body: offer)

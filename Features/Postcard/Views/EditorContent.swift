@@ -10,7 +10,7 @@ import Flow
 
 struct EditorContent: View {
     let postcard: PostcardDetails
-    let isEbayConnected: Bool
+    let ebayUnavailableReason: String?
     let onSave: (PostcardDetails) async throws -> Void
     let onListEbay: (PostcardDetails) async throws -> Void
     let onUpdateEbay: (PostcardDetails) async throws -> Void
@@ -46,13 +46,13 @@ struct EditorContent: View {
 
     init(
         postcard: PostcardDetails,
-        isEbayConnected: Bool,
+        ebayUnavailableReason: String?,
         onSave: @escaping (PostcardDetails) async throws -> Void,
         onListEbay: @escaping (PostcardDetails) async throws -> Void,
         onUpdateEbay: @escaping (PostcardDetails) async throws -> Void
     ) {
         self.postcard = postcard
-        self.isEbayConnected = isEbayConnected
+        self.ebayUnavailableReason = ebayUnavailableReason
         self.onSave = onSave
         self.onListEbay = onListEbay
         self.onUpdateEbay = onUpdateEbay
@@ -164,8 +164,8 @@ struct EditorContent: View {
                                 Text("List on eBay")
                             }
                         }
-                        .disabled(!isEbayConnected || editor.hasChanges || isListing)
-                        .help(isEbayConnected ? "List this postcard on eBay" : "Connect eBay in Account Settings to list postcards")
+                        .disabled(ebayUnavailableReason != nil || editor.hasChanges || isListing)
+                        .help(ebayUnavailableReason ?? "List this postcard on eBay")
                         
                     case .listed:
                         Button {
@@ -191,8 +191,8 @@ struct EditorContent: View {
                                 Text("Update on eBay")
                             }
                         }
-                        .disabled(!isEbayConnected || editor.hasChanges || isUpdating)
-                        .help(isEbayConnected ? "Update this postcard on eBay" : "Connect eBay in Account Settings to list postcards")
+                        .disabled(ebayUnavailableReason != nil || editor.hasChanges || isUpdating)
+                        .help(ebayUnavailableReason ?? "Update this postcard on eBay")
                         
                         viewOnEbayButton
 

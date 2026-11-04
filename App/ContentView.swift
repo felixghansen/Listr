@@ -109,7 +109,7 @@ struct ContentView: View {
         .inspector(isPresented: $showInspector) {
             PostcardInspector(
                 selectedPostcards: viewModel.selectedPostcards,
-                isEbayConnected: userRepo.isEbayConnected,
+                ebayUnavailableReason: userRepo.ebayUnavailableReason,
                 onSave: { postcard in
                     try await viewModel.savePostcard(postcard)
                 },
@@ -132,11 +132,8 @@ struct ContentView: View {
             } label: {
                 Label("List on eBay", systemImage: "tag")
             }
-            .disabled(!userRepo.isEbayConnected || !viewModel.selectedPostcards.contains { $0.status == .readyToList })
-            .help(userRepo.isEbayConnected
-                ? "List selected Ready to List postcards on eBay"
-                : "Connect eBay in Account Settings to list postcards"
-            )
+            .disabled(userRepo.ebayUnavailableReason != nil || !viewModel.selectedPostcards.contains { $0.status == .readyToList })
+            .help(userRepo.ebayUnavailableReason ?? "List selected Ready to List postcards on eBay")
         }
         
         CollectionToolbar.importButton {

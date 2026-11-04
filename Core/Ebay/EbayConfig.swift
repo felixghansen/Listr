@@ -19,12 +19,10 @@ struct EbayConfig {
     let countryCode: String
     let currency: String
 
-    // TODO: These belong to the Sandbox test seller. Real sellers each have their own,
-    // so look them up per user (Account API) and store them once real sign-in works.
-    let merchantLocationKey: String
-    let fulfillmentPolicyID: String
-    let paymentPolicyID: String
-    let returnPolicyID: String
+    var merchantLocationKey: String?
+    var fulfillmentPolicyID: String?
+    var paymentPolicyID: String?
+    var returnPolicyID: String?
 
     func listingURL(for listingID: String) -> URL? {
         URL(string: "\(websiteURL)/itm/\(listingID)")

@@ -18,6 +18,16 @@ final class UserRepository: ObservableObject {
     @Published private(set) var isEbayConnected = false
     @Published private(set) var listingDefaults: ListingDefaults?
     
+    var ebayUnavailableReason: String? {
+        if !isEbayConnected {
+            return "Connect eBay in Account Settings to list postcards"
+        }
+        if listingDefaults?.isComplete != true {
+            return "Choose your listing defaults in Account Settings to list postcards"
+        }
+        return nil
+    }
+    
     private init() {}
     
     func startListening() {

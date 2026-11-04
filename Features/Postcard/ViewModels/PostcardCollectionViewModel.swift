@@ -11,10 +11,12 @@ import SwiftUI
 @MainActor
 final class PostcardCollectionViewModel: ObservableObject {
     private let postcardRepo: PostcardRepository
+    private let userRepo: UserRepository
     private let ebayClient: EbayClient
     
-    init(postcardRepo: PostcardRepository? = nil, ebayClient: EbayClient) {
+    init(postcardRepo: PostcardRepository? = nil, userRepo: UserRepository? = nil, ebayClient: EbayClient) {
         self.postcardRepo = postcardRepo ?? .shared
+        self.userRepo = userRepo ?? .shared
         self.ebayClient = ebayClient
     }
     
@@ -55,11 +57,13 @@ final class PostcardCollectionViewModel: ObservableObject {
     }
     
     func updateListing(_ postcard: PostcardDetails) async throws {
-        try await ebayClient.updateListing(postcard)
+        let defaults = try requireListingDefaults()
+        try await ebayClient.updateListing(postcard, defaults: defaults)
     }
     
     func listPostcard(_ postcard: PostcardDetails) async throws {
-        let listingId = try await ebayClient.createListing(postcard)
+        let defaults = try requireListingDefaults()
+        let listingId = try await ebayClient.createListing(postcard, defaults: defaults)
         
         var updatedPostcard = postcard
         updatedPostcard.markListed(listingId: listingId)
@@ -97,6 +101,11 @@ final class PostcardCollectionViewModel: ObservableObject {
         }
     }
     
-    
+    private func requireListingDefaults() throws -> ListingDefaults {
+        guard let defaults = userRepo.listingDefaults, defaults.isComplete else {
+            throw EbayClientError.missingListingDefaults
+        }
+        return defaults
+    }
 }
 
