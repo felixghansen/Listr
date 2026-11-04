@@ -108,14 +108,9 @@ final class AuthViewModel: ObservableObject {
         }
     }
     
-    func signOut() {
-        do {
-            try AuthService.shared.signOut()
-            self.needsVerification = false
-        } catch {
-            self.alertState = .error(error.localizedDescription)
-            self.showAlert = true
-        }
+    func signOut() throws {
+        try AuthService.shared.signOut()
+        needsVerification = false
     }
     
     private func startCooldown() {
