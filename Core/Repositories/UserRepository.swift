@@ -12,27 +12,56 @@ import FirebaseFirestore
 final class UserRepository: ObservableObject {
     static let shared = UserRepository()
     
+    private var userListener: ListenerRegistration?
+    private var defaultsListener: ListenerRegistration?
+    
     @Published private(set) var isEbayConnected = false
-    private var listener: ListenerRegistration?
+    @Published private(set) var listingDefaults: ListingDefaults?
     
     private init() {}
     
     func startListening() {
         stopListening()
-        listener = FirestorePaths.user().addSnapshotListener { [weak self] snapshot, error in
+        
+        userListener = FirestorePaths.user().addSnapshotListener { [weak self] snapshot, error in
             if let error {
                 print("User listener failed: \(error)")
                 return
             }
+            
             guard let snapshot else { return }
             
             self?.isEbayConnected = snapshot.get("isEbayConnected") as? Bool ?? false
         }
+    
+        defaultsListener = FirestorePaths.listingDefaults().addSnapshotListener { [weak self] snapshot, error in
+            if let error {
+                print("Listing defaults listener failed: \(error)")
+                return
+            }
+            
+            guard let snapshot else { return }
+            
+            self?.listingDefaults = try? snapshot.data(as: ListingDefaults.self)
+        }
     }
     
     func stopListening() {
-        listener?.remove()
-        listener = nil
+        userListener?.remove()
+        userListener = nil
+        
+        defaultsListener?.remove()
+        defaultsListener = nil
+        
+        listingDefaults = nil
         isEbayConnected = false
+    }
+    
+    func saveDefaults(_ defaults: ListingDefaults) async throws {
+        let encoded = try Firestore.Encoder().encode(defaults)
+        
+        try await FirestorePaths.listingDefaults().setData(encoded)
+        
+        listingDefaults = defaults
     }
 }

@@ -26,6 +26,10 @@ enum FirestorePaths {
     static func batches(_ uid: String = currentUserID) -> CollectionReference {
         user(uid).collection("batches")
     }
+    
+    static func listingDefaults(_ uid: String = currentUserID) -> DocumentReference {
+        user(uid).collection("settings").document("listingDefaults")
+    }
 
     /// Storage path for an uploaded postcard image.
     static func imagePath(batchID: String, fileName: String, uid: String = currentUserID) -> String {

@@ -25,7 +25,7 @@ struct AccountSettings: View {
                 Section("Account") {
                     LabeledContent("Email", value: auth.user?.email ?? "—")
                 }
-
+                
                 Section {
                     LabeledContent("Status") {
                         if isDisconnecting {
@@ -71,12 +71,20 @@ struct AccountSettings: View {
                         Text("Connect your eBay account so Listr can list postcards for you.")
                     }
                 }
+                
+                if userRepo.isEbayConnected {
+                    ListingDefaultsSection()
+                }
             }
             .formStyle(.grouped)
-
+            
             HStack {
                 Button("Sign Out") {
-                    authVM.signOut()
+                    do {
+                        try authVM.signOut()
+                    } catch {
+                        showError("Couldn't Sign Out", error)
+                    }
                 }
                 Spacer()
                 Button("Done") {

@@ -207,6 +207,24 @@ struct InventoryLocation: Decodable {
     let name: String?
 }
 
+extension InventoryLocation {
+    var displayName: String {
+        if let name {
+            return name
+        } else if let city = location.address.city, let stateOrProvince = location.address.stateOrProvince {
+            return "\(city), \(stateOrProvince)"
+        } else if let postalCode = location.address.postalCode {
+            return postalCode
+        } else {
+            return merchantLocationKey
+        }
+    }
+}
+
+extension InventoryLocation: Identifiable {
+    var id: String { merchantLocationKey }
+}
+
 struct InventoryLocationDetails: Codable {
     let address: InventoryLocationAddress
 }
