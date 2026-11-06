@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct PostcardSummary: Identifiable {
+struct PostcardSummary: Identifiable, Equatable {
     let id: String
     let title: String
     let frontImageThumbnailURL: URL?

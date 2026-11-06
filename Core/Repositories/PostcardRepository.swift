@@ -125,6 +125,10 @@ final class PostcardRepository: ObservableObject {
         await BatchRepository.shared.deletePostcards(postcards)
         await deleteImages(for: postcards)
     }
+    
+    func cachedDetails(for id: String) -> PostcardDetails? {
+        return detailsCache[id]
+    }
 
     // MARK: - Helpers
     

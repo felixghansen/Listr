@@ -58,6 +58,9 @@ struct ContentView: View {
         .onChange(of: viewModel.sortOrder) {
             viewModel.startListening()
         }
+        .onChange(of: postcardRepo.postcards) {
+            viewModel.refreshSelection()
+        }
         .onDeleteCommand {
             requestDelete(viewModel.selectedPostcards)
         }

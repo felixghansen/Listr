@@ -101,6 +101,16 @@ final class PostcardCollectionViewModel: ObservableObject {
         }
     }
     
+    func refreshSelection() {
+        selectedPostcards = selectedPostcards.map { selected in
+            guard let id = selected.id, let latest = postcardRepo.cachedDetails(for: id) else {
+                return selected
+            }
+            
+            return latest
+        }
+    }
+    
     private func requireListingDefaults() throws -> ListingDefaults {
         guard let defaults = userRepo.listingDefaults, defaults.isComplete else {
             throw EbayClientError.missingListingDefaults
