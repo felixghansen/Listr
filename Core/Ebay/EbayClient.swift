@@ -99,11 +99,7 @@ struct EbayClient {
     }
     
     private func createOffer(_ postcard: PostcardDetails, defaults: ListingDefaults) async throws -> String {
-        guard let id = postcard.id else {
-            throw EbayClientError.missingPostcardID
-        }
-        
-        let offer = try EbayOffer(postcard: postcard, sku: id, config: config, defaults: defaults)
+        let offer = try EbayOffer(postcard: postcard, config: config, defaults: defaults)
         
         do {
             let data = try await fetchData(path: "/sell/inventory/v1/offer", method: "POST", body: offer)

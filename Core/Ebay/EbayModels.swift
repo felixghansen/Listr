@@ -132,7 +132,11 @@ struct EbayOffer: Encodable {
 }
 
 extension EbayOffer {
-    init(postcard: PostcardDetails, sku: String, config: EbayConfig, defaults: ListingDefaults) throws {
+    init(postcard: PostcardDetails, config: EbayConfig, defaults: ListingDefaults) throws {
+        guard let sku = postcard.id else {
+            throw EbayClientError.missingPostcardID
+        }
+        
         guard let fulfillmentPolicyID = defaults.fulfillmentPolicyID,
               let paymentPolicyID = defaults.paymentPolicyID,
               let returnPolicyID = defaults.returnPolicyID,
