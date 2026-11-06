@@ -32,7 +32,8 @@ struct EbayConfig {
         scopes: [
             "https://api.ebay.com/oauth/api_scope",
             "https://api.ebay.com/oauth/api_scope/sell.inventory",
-            "https://api.ebay.com/oauth/api_scope/sell.account"
+            "https://api.ebay.com/oauth/api_scope/sell.account",
+            "https://api.ebay.com/oauth/api_scope/sell.fulfillment.readonly"
         ],
         marketplaceID: "EBAY_US",
         countryCode: "US",
