@@ -45,7 +45,6 @@ struct AccountSettings: View {
                                 Button("Disconnect") {
                                     disconnectEbay()
                                 }
-                                .controlSize(.small)
                             }
                         } else if isConnecting {
                             HStack {
@@ -59,7 +58,6 @@ struct AccountSettings: View {
                             Button("Connect…") {
                                 connectEbay()
                             }
-                            .controlSize(.small)
                         }
                     }
                 } header: {

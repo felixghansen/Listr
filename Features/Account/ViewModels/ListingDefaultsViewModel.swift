@@ -17,7 +17,7 @@ final class ListingDefaultsViewModel: ObservableObject {
     @Published private(set) var returnPolicies: [EbayPolicy] = []
     @Published private(set) var locations: [InventoryLocation] = []
     
-    @Published private(set) var isLoading: Bool = false
+    @Published private(set) var hasLoaded: Bool = false
     @Published private(set) var errorMessage: String = ""
     
     private let ebayClient: EbayClient
@@ -29,10 +29,9 @@ final class ListingDefaultsViewModel: ObservableObject {
     }
     
     func loadDefaults() async {
-        isLoading = true
         errorMessage = ""
         
-        defer { isLoading = false }
+        defer { hasLoaded = true }
         
         do {
             async let fulfillmentPolicies = ebayClient.getFulfillmentPolicies()
@@ -48,13 +47,11 @@ final class ListingDefaultsViewModel: ObservableObject {
     }
     
     func saveDefaults() async {
-        isLoading = true
+        guard defaults != userRepo.listingDefaults else { return }
+        
         errorMessage = ""
         
-        defer { isLoading = false }
-        
         do {
-            guard defaults != userRepo.listingDefaults else { return }
             try await userRepo.saveDefaults(defaults)
         } catch {
             errorMessage = error.localizedDescription
@@ -62,10 +59,7 @@ final class ListingDefaultsViewModel: ObservableObject {
     }
     
     func createLocation(postalCode: String) async {
-        isLoading = true
         errorMessage = ""
-        
-        defer { isLoading = false }
         
         do {
             let key = try await ebayClient.createInventoryLocation(postalCode: postalCode)

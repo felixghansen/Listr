@@ -19,11 +19,6 @@ struct EbayConfig {
     let countryCode: String
     let currency: String
 
-    var merchantLocationKey: String?
-    var fulfillmentPolicyID: String?
-    var paymentPolicyID: String?
-    var returnPolicyID: String?
-
     func listingURL(for listingID: String) -> URL? {
         URL(string: "\(websiteURL)/itm/\(listingID)")
     }
@@ -41,11 +36,7 @@ struct EbayConfig {
         ],
         marketplaceID: "EBAY_US",
         countryCode: "US",
-        currency: "USD",
-        merchantLocationKey: "listr-test-location",
-        fulfillmentPolicyID: "6258646000",
-        paymentPolicyID: "6258647000",
-        returnPolicyID: "6258648000"
+        currency: "USD"
     )
 
     static let current = EbayConfig.sandbox
