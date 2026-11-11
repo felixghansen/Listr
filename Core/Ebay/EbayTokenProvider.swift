@@ -85,14 +85,3 @@ actor CloudFunctionTokenProvider: EbayTokenProvider {
         return accessToken
     }
 }
-
-struct EnvironmentTokenProvider: EbayTokenProvider {
-    var variableName = "EBAY_SANDBOX_TOKEN"
-
-    func accessToken() async throws -> String {
-        guard let token = ProcessInfo.processInfo.environment[variableName], !token.isEmpty else {
-            throw EbayTokenError.missingEnvironmentToken
-        }
-        return token
-    }
-}
