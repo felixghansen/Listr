@@ -25,6 +25,11 @@ interface ExchangeEbayTokenResponse {
     refresh_token_expires_in: number;
 }
 
+interface EbayTokenErrorResponse {
+    error?: string;
+    error_description?: string;
+}
+
 interface GetEbayAccessTokenResponse {
     access_token: string;
     expires_in: number;
@@ -65,10 +70,20 @@ const requestEbayToken = async (body: URLSearchParams) => {
             text,
         });
 
-        if (response.status === 400) {
+        let errorCode: string | undefined;
+        try {
+            errorCode = (JSON.parse(text) as EbayTokenErrorResponse).error;
+        } catch {
+            // Not JSON
+        }
+
+        const needsReconnect = errorCode === "invalid_grant" ||
+            errorCode === "invalid_scope";
+
+        if (needsReconnect) {
             throw new HttpsError(
                 "invalid-argument",
-                "Your eBay sign-in expired. Please connect again."
+                "Please reconnect your eBay account."
             );
         }
 
@@ -81,7 +96,7 @@ const requestEbayToken = async (body: URLSearchParams) => {
 
         throw new HttpsError(
             "internal",
-            "Couldn't connect your eBay account. Please try again."
+            "Couldn't reach eBay. Please try again."
         );
     }
 
