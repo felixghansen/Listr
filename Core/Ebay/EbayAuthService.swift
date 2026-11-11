@@ -85,7 +85,7 @@ final class EbayAuthService: ObservableObject {
     }
 
     private func signInURL(state: String) -> URL {
-        var components = URLComponents(string: config.authorizeURL)!
+        var components = URLComponents(url: config.authorizeURL, resolvingAgainstBaseURL: false)!
         components.queryItems = [
             URLQueryItem(name: "response_type", value: "code"),
             URLQueryItem(name: "client_id", value: config.clientID),

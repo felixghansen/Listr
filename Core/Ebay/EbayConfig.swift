@@ -8,9 +8,10 @@
 import Foundation
 
 struct EbayConfig {
-    let apiBaseURL: String
-    let authorizeURL: String
-    let websiteURL: String
+    let apiBaseURLString: String
+    let authorizeURL: URL
+    let websiteURL: URL
+    let businessPoliciesURL: URL
     let clientID: String
     let ruName: String
     let scopes: [String]
@@ -19,14 +20,15 @@ struct EbayConfig {
     let countryCode: String
     let currency: String
 
-    func listingURL(for listingID: String) -> URL? {
-        URL(string: "\(websiteURL)/itm/\(listingID)")
+    func listingURL(for listingID: String) -> URL {
+        websiteURL.appending(path: "itm/\(listingID)")
     }
 
     static let sandbox = EbayConfig(
-        apiBaseURL: "https://api.sandbox.ebay.com",
-        authorizeURL: "https://auth.sandbox.ebay.com/oauth2/authorize",
-        websiteURL: "https://sandbox.ebay.com",
+        apiBaseURLString: "https://api.sandbox.ebay.com",
+        authorizeURL: URL(string: "https://auth.sandbox.ebay.com/oauth2/authorize")!,
+        websiteURL: URL(string: "https://sandbox.ebay.com")!,
+        businessPoliciesURL: URL(string: "https://www.sandbox.ebay.com/bp/manage")!,
         clientID: "FelixHan-Listr-SBX-81d2ad8ad-beecadaf",
         ruName: "Felix_Hansen-FelixHan-Listr--cueveor",
         scopes: [

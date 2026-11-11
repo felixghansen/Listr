@@ -36,8 +36,9 @@ struct EditorContent: View {
     
     @ViewBuilder
     private var viewOnEbayButton: some View {
-        if let listingId = postcard.ebayListingId,
-           let url = EbayConfig.current.listingURL(for: listingId) {
+        if let listingId = postcard.ebayListingId {
+            let url = EbayConfig.current.listingURL(for: listingId)
+            
             Button("View on eBay") {
                 openURL(url)
             }

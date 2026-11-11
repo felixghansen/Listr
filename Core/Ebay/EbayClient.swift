@@ -8,8 +8,12 @@
 import Foundation
 
 struct EbayClient {
-    let config: EbayConfig
-    let tokenProvider: any EbayTokenProvider
+    private let config: EbayConfig
+    private let tokenProvider: any EbayTokenProvider
+    
+    var businessPoliciesURL: URL {
+        config.businessPoliciesURL
+    }
 
     init(config: EbayConfig = .current, tokenProvider: any EbayTokenProvider) {
         self.config = config
@@ -129,7 +133,7 @@ struct EbayClient {
     }
     
     private func fetchData(path: String, method: String, body: (any Encodable)? = nil) async throws -> Data {
-        guard let url = URL(string: config.apiBaseURL + path) else {
+        guard let url = URL(string: config.apiBaseURLString + path) else {
             throw URLError(.badURL)
         }
         

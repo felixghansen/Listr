@@ -23,6 +23,10 @@ final class ListingDefaultsViewModel: ObservableObject {
     private let ebayClient: EbayClient
     private let userRepo: UserRepository
     
+    var businessPoliciesURL: URL {
+        ebayClient.businessPoliciesURL
+    }
+    
     init(ebayClient: EbayClient, userRepo: UserRepository) {
         self.ebayClient = ebayClient
         self.userRepo = userRepo
@@ -34,13 +38,22 @@ final class ListingDefaultsViewModel: ObservableObject {
         defer { hasLoaded = true }
         
         do {
-            async let fulfillmentPolicies = ebayClient.getFulfillmentPolicies()
-            async let paymentPolicies = ebayClient.getPaymentPolicies()
-            async let returnPolicies = ebayClient.getReturnPolicies()
-            async let locations = ebayClient.getInventoryLocations()
+            async let fulfillment = ebayClient.getFulfillmentPolicies()
+            async let payment = ebayClient.getPaymentPolicies()
+            async let returns = ebayClient.getReturnPolicies()
+            async let ebayLocations = ebayClient.getInventoryLocations()
+
+            (fulfillmentPolicies, paymentPolicies, returnPolicies, locations) =
+                try await (fulfillment, payment, returns, ebayLocations)
             
-            defaults = userRepo.listingDefaults ?? ListingDefaults()
-            (self.fulfillmentPolicies, self.paymentPolicies, self.returnPolicies, self.locations) = try await (fulfillmentPolicies, paymentPolicies, returnPolicies, locations)
+            var loaded = userRepo.listingDefaults ?? ListingDefaults()
+            
+            loaded.fulfillmentPolicyID = resolvedID(loaded.fulfillmentPolicyID, in: fulfillmentPolicies.map(\.id))
+            loaded.paymentPolicyID = resolvedID(loaded.paymentPolicyID, in: paymentPolicies.map(\.id))
+            loaded.returnPolicyID = resolvedID(loaded.returnPolicyID, in: returnPolicies.map(\.id))
+            loaded.merchantLocationKey = resolvedID(loaded.merchantLocationKey, in: locations.map(\.merchantLocationKey))
+            
+            defaults = loaded
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -68,5 +81,12 @@ final class ListingDefaultsViewModel: ObservableObject {
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+    
+    private func resolvedID(_ current: String?, in ids: [String]) -> String? {
+        if let current, ids.contains(current) {
+            return current
+        }
+        return ids.count == 1 ? ids.first : nil
     }
 }

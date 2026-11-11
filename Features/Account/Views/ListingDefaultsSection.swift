@@ -70,7 +70,7 @@ struct ListingDefaultsSection: View {
             Text("Listing Defaults")
         } footer: {
             if listingDefaultsVM.errorMessage.isEmpty {
-                Text("Used for every postcard Listr lists. Manage your policies in eBay Seller Hub.")
+                Text(footerText)
             } else {
                 Text(listingDefaultsVM.errorMessage)
                     .foregroundStyle(.red)
@@ -84,6 +84,14 @@ struct ListingDefaultsSection: View {
                 await listingDefaultsVM.saveDefaults()
             }
         }
+    }
+    
+    private var footerText: AttributedString {
+        var text = AttributedString("Used for every postcard Listr lists. ")
+        var link = AttributedString("Manage Policies in Seller Hub")
+        link.link = listingDefaultsVM.businessPoliciesURL
+        text.append(link)
+        return text
     }
 
     private var locationSelection: Binding<String?> {
